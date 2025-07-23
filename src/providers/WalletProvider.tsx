@@ -34,6 +34,10 @@ createAppKit({
   enableInjected: false,
   enableEIP6963: false,
   enableCoinbase: false,
+  // 添加以下配置来隐藏品牌标识
+  termsConditionsUrl: undefined,
+  privacyPolicyUrl: undefined,
+  // 或者添加这个参数来完全禁用品牌展示
   themeMode: 'dark'
 })
 

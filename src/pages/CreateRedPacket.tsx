@@ -233,7 +233,7 @@ export const CreateRedPacket: React.FC = () => {
   const [count, setCount] = useState('')
   const [message, setMessage] = useState('Congratulations, good luck!')
   const [shareLink, setShareLink] = useState('')
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(4)
   const [balance, setBalance] = useState(0)
   const [mode, setMode] = useState<'redpacket' | 'whitelist'>(getInitialMode())
   const [whitelistText, setWhitelistText] = useState('')
@@ -1088,7 +1088,7 @@ export const CreateRedPacket: React.FC = () => {
       {/* Header navigation is now handled uniformly by Header component */}
 
       {/* Content area */}
-      <Box minH="100vh" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="20px">
+      <Box minH="calc(100vh-72px)" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="72px">
         {currentStep === 1 && (
           <VStack spacing={2} align="center" w="100%" mt="20px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
@@ -1288,7 +1288,7 @@ export const CreateRedPacket: React.FC = () => {
           </VStack>
         )}
         {currentStep === 2 && (
-          <VStack spacing={2} align="center" w="100%" mt="60px">
+          <VStack spacing={2} align="center" w="100%" >
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1913,7 +1913,7 @@ export const CreateRedPacket: React.FC = () => {
           </VStack>
         )}
         {currentStep === 4 && (
-          <VStack spacing={6} align="center" w="100%" mt="40px">
+          <VStack spacing={6} align="center" w="100%">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Red Packet Created Successfully!
             </Text>

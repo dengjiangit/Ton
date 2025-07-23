@@ -13,7 +13,7 @@ const projectId = (import.meta as any).env?.VITE_PROJECT_ID || 'your-project-id-
 const metadata = {
   name: 'AIDR',
   description: '基于Solana区块链的数字红包平台',
-  url: 'https://your-app-url.com',
+  url: 'https://ton-taupe.vercel.app/',
   icons: ['https://your-app-icon.com/icon.png']
 }
 

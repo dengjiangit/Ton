@@ -61,8 +61,12 @@ export const Home: React.FC = () => {
       >
         {/* 左侧文案 */}
         <VStack align="center" spacing={8} maxW="lg">
-          <Text fontSize={{ base: '3xl', md: '4xl' }} fontWeight="bold" color="white" lineHeight="1.2">
-            All-in-One <Text as="span" color="yellow.300">Decentralized Infrastructure</Text> for Web3 Projects
+          <Text fontSize={{ base: '6xl', md: '8xl' }} fontWeight="bold" lineHeight="1.2" color="yellow.300" >
+            All-in-One
+            <Text as="p" textDecoration="underline" color="white" fontWeight="normal" fontSize={{ base: 'xl', md: '2xl' }}>Decentralized Infrastructure
+            </Text>
+            <Text as="p" textDecoration="underline" color="white" fontWeight="normal" mt={4} fontSize={{ base: 'xl', md: '2xl' }}>
+              for Web3 Projects</Text>
           </Text>
           <VStack spacing={4} align="start">
             <Button
@@ -115,7 +119,7 @@ export const Home: React.FC = () => {
             position="absolute"
             left="110px"
             top="0"
-            boxSize="120px"
+            boxSize="80px"
             zIndex={2}
           />
           {/* 左下角红包 */}
@@ -123,9 +127,9 @@ export const Home: React.FC = () => {
             src="/redpacket-parachute.png"
             alt="Red Packet"
             position="absolute"
-            left="0"
-            top="80px"
-            boxSize="90px"
+            left="16"
+            top="70px"
+            boxSize="50px"
             zIndex={1}
           />
           {/* 右下角红包 */}
@@ -133,9 +137,9 @@ export const Home: React.FC = () => {
             src="/redpacket-parachute.png"
             alt="Red Packet"
             position="absolute"
-            left="200px"
-            top="100px"
-            boxSize="80px"
+            left="170px"
+            top="90px"
+            boxSize="50px"
             zIndex={1}
           />
         </Box>
@@ -252,7 +256,7 @@ export const Home: React.FC = () => {
           </Flex>
         </Flex>
       </Box>
-    </Box>
+    </Box >
   )
 
   // 第二页：价格对比页面

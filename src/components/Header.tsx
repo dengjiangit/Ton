@@ -45,6 +45,7 @@ export const Header: React.FC = () => {
     setIsTg(isTelegram)
 
     if (isTelegram) {
+      alert('请在 Telegram 中打开此链接');
       onOpen()
     } else {
       open()
@@ -111,7 +112,7 @@ export const Header: React.FC = () => {
                 colorScheme="teal"
                 size="sm"
                 onClick={() => {
-                  open({ view: 'Qrcode' }) // 弹出二维码
+                  open({ view: 'connect' }) // 弹出二维码
                   onClose()
                 }}
               >
@@ -292,7 +293,7 @@ export const Header: React.FC = () => {
                 fontSize="sm"
                 fontWeight="medium"
                 _hover={{ bg: 'gray.100' }}
-                onClick={() => open()}
+                onClick={() => handleConnectClick()}
               >
                 Connect Wallet
               </Button>

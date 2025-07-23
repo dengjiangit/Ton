@@ -38,7 +38,7 @@ import { FaTwitter, FaTelegram, FaDiscord, FaWeixin } from 'react-icons/fa'
 import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
 import { Connection, PublicKey, Transaction, Keypair, TransactionInstruction, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
 import QRCode from 'qrcode'
-import { RPC_ENDPOINT, LAUNCHPAD_CrowdFunding_PROGRAM_ID } from '../config/constants'
+import { RPC_ENDPOINT, LAUNCHPAD_CrowdFunding_PROGRAM_ID, buildApiUrl } from '../config/constants'
 import { 
   getAssociatedTokenAddressSync, 
   createAssociatedTokenAccountInstruction,
@@ -99,6 +99,7 @@ interface IPFSCrowdfundingData {
   totalSupply: string
   projectBlurb: string
   targetAmount: string
+  projectId: string // 添加projectId字段
   communityLinks: {
     twitterUrl: string
     telegramUrl: string
@@ -652,6 +653,21 @@ export const Launchpad: React.FC = () => {
       })
       return false
     }
+    
+    // 检查总供应量是否超出64位无符号整数范围
+    const totalSupplyNum = Number(formData.totalSupply)
+    const maxU64 = BigInt(2) ** BigInt(64) - BigInt(1)
+    const maxTotalSupply = Number(maxU64 / BigInt(Math.pow(10, 9))) // 考虑9位小数，因为众筹合约也会乘以10^9
+    
+    if (totalSupplyNum > maxTotalSupply) {
+      toast({
+        title: '总供应量过大',
+        description: `最大允许值约为 ${maxTotalSupply.toLocaleString()}。请减少代币总供应量。`,
+        status: 'error',
+        duration: 5000,
+      })
+      return false
+    }
     if (!formData.projectBlurb.trim()) {
       toast({
         title: '请输入项目简介',
@@ -831,6 +847,7 @@ export const Launchpad: React.FC = () => {
           totalSupply: formData.totalSupply,
           projectBlurb: formData.projectBlurb,
           targetAmount: formData.targetAmount,
+          projectId: projectId.toString(), // 添加projectId字段
           communityLinks: {
             twitterUrl: formData.twitterUrl,
             telegramUrl: formData.telegramUrl,
@@ -854,6 +871,7 @@ export const Launchpad: React.FC = () => {
               creator: address || '',
               type: 'crowdfunding',
               tokenSymbol: formData.tokenSymbol,
+              projectId: projectId.toString(),
               timestamp: Date.now().toString()
             }
           }
@@ -966,6 +984,13 @@ export const Launchpad: React.FC = () => {
 
       // 8. 创建铸造代币指令
       const mintAmount = BigInt(formData.totalSupply) * BigInt(Math.pow(10, 9))
+      
+      // 检查数值是否超出64位无符号整数范围
+      const maxU64 = BigInt(2) ** BigInt(64) - BigInt(1)
+      if (mintAmount > maxU64) {
+        throw new Error(`代币总供应量过大！计算后的值 ${mintAmount} 超出了64位无符号整数范围。最大允许值约为 18,446,744,073,709,551,615。请减少代币总供应量。`)
+      }
+      
       const mintTokenDiscriminator = Buffer.from([172, 137, 183, 14, 207, 110, 234, 56])
       const amountBuffer = Buffer.alloc(8)
       amountBuffer.writeBigUInt64LE(mintAmount)
@@ -990,7 +1015,11 @@ export const Launchpad: React.FC = () => {
       
       // total_amount: u64 (8 bytes)
       const totalAmountBuf = Buffer.alloc(8)
-      totalAmountBuf.writeBigUInt64LE(BigInt(formData.totalSupply))
+      const totalSupplyBigInt = BigInt(formData.totalSupply) * BigInt(Math.pow(10, 9)) // 需要乘以 10^9 来匹配铸造数量
+      if (totalSupplyBigInt > maxU64) {
+        throw new Error(`代币总供应量过大！值 ${totalSupplyBigInt} 超出了64位无符号整数范围。最大允许值约为 18,446,744,073,709,551,615。请减少代币总供应量。`)
+      }
+      totalAmountBuf.writeBigUInt64LE(totalSupplyBigInt)
       
       // token_name: string (4 bytes length + string bytes)
       const tokenNameBuf = Buffer.from(formData.tokenName)
@@ -1008,11 +1037,15 @@ export const Launchpad: React.FC = () => {
       
       // allocations: Vec<AllocationEntry> (4 bytes length + allocation entries)
       // 使用合约默认分配方案
-      const totalSupplyBigInt = BigInt(formData.totalSupply)
       const airdropAmount = totalSupplyBigInt * BigInt(10) / BigInt(100)  // 10%
       const crowdfundingAmount = totalSupplyBigInt * BigInt(40) / BigInt(100)  // 40%
       const liquidityAmount = totalSupplyBigInt * BigInt(30) / BigInt(100)  // 30%
       const developerAmount = totalSupplyBigInt * BigInt(20) / BigInt(100)  // 20%
+      
+      // 检查分配金额是否超出64位无符号整数范围
+      if (airdropAmount > maxU64 || crowdfundingAmount > maxU64 || liquidityAmount > maxU64 || developerAmount > maxU64) {
+        throw new Error(`代币分配金额过大！某个分配金额超出了64位无符号整数范围。请减少代币总供应量。`)
+      }
       
       const allocations = [
         { name: 'airdrop', amount: airdropAmount, unlockMonths: 12 },
@@ -1056,7 +1089,11 @@ export const Launchpad: React.FC = () => {
       // referral_reward_amount: Option<u64> (1 byte tag + 8 bytes value if Some)
       const referralRewardTag = Buffer.from([1]) // Some
       const referralRewardVal = Buffer.alloc(8)
-      referralRewardVal.writeBigUInt64LE(developerAmount / BigInt(1000)) // 使用开发者池的1/1000作为推荐奖励
+      const referralRewardAmount = developerAmount / BigInt(1000) // 使用开发者池的1/1000作为推荐奖励
+      if (referralRewardAmount > maxU64) {
+        throw new Error(`推荐奖励金额过大！值 ${referralRewardAmount} 超出了64位无符号整数范围。请减少代币总供应量。`)
+      }
+      referralRewardVal.writeBigUInt64LE(referralRewardAmount)
       
       // referral_reward_pool_name: string (4 bytes length + string bytes)
       const referralPoolNameBuf = Buffer.from('developer')
@@ -1531,6 +1568,56 @@ export const Launchpad: React.FC = () => {
           light: '#FFFFFF',
         },
       })
+
+      // 17. 调用API保存项目CID信息
+      console.log('📤 开始保存项目CID信息到后端...')
+      try {
+        const apiUrl = buildApiUrl('/api/one_launch/mint_program/save_mint_cid');
+        
+        // 获取当前时间戳
+        const now = new Date().toISOString();
+        
+        // 构建正确的请求参数
+        const requestBody = {
+          block_time: now,
+          contract_address: MINT_PROGRAM_ID.toBase58(),
+          created_at: now,
+          creator: address,
+          decimals: 9, // 代币精度
+          mint: mintKeypair.publicKey.toBase58(),
+          name: formData.tokenName,
+          slot: 0, // 可以从交易中获取，这里先设为0
+          symbol: formData.tokenSymbol,
+          transaction: signature,
+          updated_at: now,
+          uri: ipfsCID !== formData.projectBlurb ? ipfsCID : ''
+        };
+        
+        console.log('🔍 请求保存CID信息:', {
+          apiUrl,
+          requestBody
+        });
+        
+        const saveCidResponse = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        })
+
+        if (saveCidResponse.ok) {
+          const saveCidResult = await saveCidResponse.json()
+          console.log('✅ 项目CID信息保存成功:', saveCidResult)
+        } else {
+          const errorText = await saveCidResponse.text()
+          console.error('❌ 保存项目CID信息失败:', saveCidResponse.status, errorText)
+          // 不抛出错误，因为主要功能已经成功
+        }
+      } catch (apiError) {
+        console.error('❌ 调用保存CID API失败:', apiError)
+        // 不抛出错误，因为主要功能已经成功
+      }
 
       setFormData(prev => ({
         ...prev,
@@ -2090,7 +2177,7 @@ export const Launchpad: React.FC = () => {
           </Button>
           
           <Button
-            onClick={() => navigate('/my-created-redpackets')}
+            onClick={() => navigate('/my-created-crowdfunding')}
             bg="#4079FF"
             color="white"
             size="lg" 
@@ -2104,7 +2191,7 @@ export const Launchpad: React.FC = () => {
             _hover={{ bg: '#3366E6' }}
             _active={{ bg: '#2952CC' }}
           >
-            My Create
+            My Created Launchpad
           </Button>
         </VStack>
       )

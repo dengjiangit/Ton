@@ -1,0 +1,17 @@
+{
+  "name": "redpacket-test",
+  "version": "1.0.0",
+  "description": "测试Solana红包合约接口",
+  "main": "test_redpacket.js",
+  "scripts": {
+    "test": "node test_redpacket.js"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.28.0",
+    "@solana/spl-token": "^0.3.8",
+    "@solana/web3.js": "^1.87.6",
+    "bs58": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "fs": "^0.0.1-security"
+  }
+}

@@ -116,6 +116,33 @@ export class IPFSService {
     }
   }
 
+  // 通用方法：从IPFS获取任意JSON数据
+  async getData(cid: string): Promise<any> {
+    try {
+      console.log('【IPFS获取】从IPFS获取数据:', cid);
+      
+      const response = await fetch(`${this.pinataGateway}${cid}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`IPFS获取失败: ${response.status} - ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      console.log('【IPFS获取】获取成功:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('【IPFS获取】获取失败:', error);
+      throw new Error(`IPFS获取失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   // 验证CID格式
   isValidCID(cid: string): boolean {
     // 基本的CID格式验证

@@ -19,6 +19,8 @@ const QRCodeWithLogo: React.FC<QRCodeWithLogoProps> = ({
   const ref = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<QRCodeStyling | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const prevValueRef = useRef<string>('');
+  const prevSizeRef = useRef<number>(size);
 
   // 根据二维码尺寸动态计算logo大小和padding
   const logoSize = Math.max(6, Math.min(14, size * 0.07)); // logo字体大小：二维码尺寸的7%，最小6px，最大14px
@@ -29,6 +31,11 @@ const QRCodeWithLogo: React.FC<QRCodeWithLogoProps> = ({
   const maxLogoSize = size * 0.2; // logo最大尺寸不超过二维码的20%
 
   useEffect(() => {
+    // 只有当value或size真正改变时才重新生成二维码
+    if (prevValueRef.current === value && prevSizeRef.current === size && qrCodeRef.current) {
+      return;
+    }
+
     const initializeQR = async () => {
       try {
         if (!qrCodeRef.current) {
@@ -71,6 +78,10 @@ const QRCodeWithLogo: React.FC<QRCodeWithLogoProps> = ({
           await qrCodeRef.current.append(ref.current);
           setIsLoaded(true);
         }
+
+        // 更新缓存的值
+        prevValueRef.current = value;
+        prevSizeRef.current = size;
       } catch (error) {
         console.error('二维码生成失败:', error);
       }

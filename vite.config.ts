@@ -1,9 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import EnvCompatible from 'vite-plugin-env-compatible'
+
 export default defineConfig({
-  plugins: [react(), EnvCompatible()],
+  plugins: [react()],
   server: {
-    port: 5175,
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   }
 }) 

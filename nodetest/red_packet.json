@@ -1,0 +1,1058 @@
+{
+  "address": "57pF4Zp3e4dUB3BdEoTn623wtvPrbRqaV2FsWnayb9N9",
+  "metadata": {
+    "name": "red_packet",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "claim_redpacket",
+      "discriminator": [
+        253,
+        91,
+        191,
+        32,
+        227,
+        199,
+        185,
+        126
+      ],
+      "accounts": [
+        {
+          "name": "claimer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "red_packet",
+          "writable": true
+        },
+        {
+          "name": "user_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "red_packet"
+              },
+              {
+                "kind": "account",
+                "path": "claimer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "pool_ata",
+          "writable": true
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "fee_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  118,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "proof",
+          "type": {
+            "option": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          }
+        },
+        {
+          "name": "red_packet_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_redpacket",
+      "discriminator": [
+        232,
+        73,
+        181,
+        171,
+        181,
+        251,
+        75,
+        16
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "creator_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "red_packet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  100,
+                  95,
+                  112,
+                  97,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "creator_state.next_red_packet_id",
+                "account": "CreatorState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "creator_ata",
+          "writable": true
+        },
+        {
+          "name": "pool_ata",
+          "writable": true
+        },
+        {
+          "name": "fee_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  118,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "total_amount",
+          "type": "u64"
+        },
+        {
+          "name": "packet_count",
+          "type": "u32"
+        },
+        {
+          "name": "red_packet_type",
+          "type": "u8"
+        },
+        {
+          "name": "merkle_root",
+          "type": {
+            "option": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        },
+        {
+          "name": "is_sol",
+          "type": "bool"
+        },
+        {
+          "name": "expiry_days",
+          "type": {
+            "option": "i64"
+          }
+        },
+        {
+          "name": "random_seed",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "initialize_creator_state",
+      "discriminator": [
+        133,
+        18,
+        167,
+        91,
+        115,
+        223,
+        51,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "creator_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_fee_vault",
+      "discriminator": [
+        185,
+        140,
+        228,
+        234,
+        79,
+        203,
+        252,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "fee_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  118,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "refund",
+      "discriminator": [
+        2,
+        96,
+        183,
+        251,
+        63,
+        208,
+        46,
+        46
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "red_packet",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "creator_ata",
+          "writable": true
+        },
+        {
+          "name": "pool_ata",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "red_packet_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_expiry_time",
+      "discriminator": [
+        167,
+        216,
+        170,
+        47,
+        130,
+        37,
+        25,
+        242
+      ],
+      "accounts": [
+        {
+          "name": "red_packet",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "expiry_time",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_fees",
+      "discriminator": [
+        198,
+        212,
+        171,
+        109,
+        144,
+        215,
+        174,
+        89
+      ],
+      "accounts": [
+        {
+          "name": "fee_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  118,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "CreatorState",
+      "discriminator": [
+        37,
+        107,
+        190,
+        213,
+        241,
+        216,
+        73,
+        180
+      ]
+    },
+    {
+      "name": "FeeVault",
+      "discriminator": [
+        192,
+        178,
+        69,
+        232,
+        58,
+        149,
+        157,
+        132
+      ]
+    },
+    {
+      "name": "RedPacket",
+      "discriminator": [
+        51,
+        197,
+        171,
+        232,
+        223,
+        81,
+        121,
+        248
+      ]
+    },
+    {
+      "name": "UserState",
+      "discriminator": [
+        72,
+        177,
+        85,
+        249,
+        76,
+        167,
+        186,
+        126
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ExpiryTimeUpdated",
+      "discriminator": [
+        3,
+        128,
+        44,
+        66,
+        89,
+        57,
+        32,
+        156
+      ]
+    },
+    {
+      "name": "FeesWithdrawn",
+      "discriminator": [
+        234,
+        15,
+        0,
+        119,
+        148,
+        241,
+        40,
+        21
+      ]
+    },
+    {
+      "name": "RedPacketClaimed",
+      "discriminator": [
+        94,
+        206,
+        226,
+        47,
+        21,
+        157,
+        142,
+        36
+      ]
+    },
+    {
+      "name": "RedPacketCreated",
+      "discriminator": [
+        78,
+        104,
+        20,
+        159,
+        91,
+        204,
+        152,
+        56
+      ]
+    },
+    {
+      "name": "RedPacketRefunded",
+      "discriminator": [
+        74,
+        164,
+        71,
+        154,
+        137,
+        2,
+        63,
+        189
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidRedPacketType",
+      "msg": "Invalid red packet type"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidMerkleRoot",
+      "msg": "Invalid merkle root"
+    },
+    {
+      "code": 6002,
+      "name": "RedPacketExpired",
+      "msg": "Red packet has expired"
+    },
+    {
+      "code": 6003,
+      "name": "AlreadyClaimed",
+      "msg": "Already claimed"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidClaimAmount",
+      "msg": "Invalid claim amount"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds in red packet"
+    },
+    {
+      "code": 6006,
+      "name": "MerkleProofInvalid",
+      "msg": "Invalid merkle proof"
+    },
+    {
+      "code": 6007,
+      "name": "MerkleProofTooLong",
+      "msg": "Merkle proof length exceeds maximum"
+    },
+    {
+      "code": 6008,
+      "name": "RedPacketNotExpired",
+      "msg": "Red packet not expired yet"
+    },
+    {
+      "code": 6009,
+      "name": "Unauthorized",
+      "msg": "Unauthorized access"
+    },
+    {
+      "code": 6010,
+      "name": "NoFundsToRefund",
+      "msg": "No funds to refund"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidPacketCount",
+      "msg": "Invalid packet count"
+    },
+    {
+      "code": 6012,
+      "name": "InsufficientTotalAmount",
+      "msg": "Insufficient total amount"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidExpiryDays",
+      "msg": "Expiry days must be between 1 and 30"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidExpiryTime",
+      "msg": "Expiry time must be in the future and within 30 days"
+    },
+    {
+      "code": 6015,
+      "name": "TooManyExpiryChanges",
+      "msg": "Cannot change expiry time more than 3 times"
+    },
+    {
+      "code": 6016,
+      "name": "NoPacketsRemaining",
+      "msg": "No packets remaining"
+    },
+    {
+      "code": 6017,
+      "name": "RandomnessError",
+      "msg": "Randomness generation error"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidRedPacketId",
+      "msg": "Invalid red packet ID"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidMint",
+      "msg": "Invalid mint account"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidATA",
+      "msg": "Invalid associated token account"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidAccountOwner",
+      "msg": "Invalid account owner"
+    },
+    {
+      "code": 6022,
+      "name": "InsufficientClaimerFunds",
+      "msg": "Insufficient funds in claimer account"
+    },
+    {
+      "code": 6023,
+      "name": "CounterOverflow",
+      "msg": "Counter overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "CreatorState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "next_red_packet_id",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ExpiryTimeUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "red_packet",
+            "type": "pubkey"
+          },
+          {
+            "name": "new_expiry_time",
+            "type": "i64"
+          },
+          {
+            "name": "red_packet_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeVault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "total_fees",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeesWithdrawn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RedPacket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_amount",
+            "type": "u64"
+          },
+          {
+            "name": "remaining_amount",
+            "type": "u64"
+          },
+          {
+            "name": "packet_count",
+            "type": "u32"
+          },
+          {
+            "name": "claimed_count",
+            "type": "u32"
+          },
+          {
+            "name": "red_packet_type",
+            "type": "u8"
+          },
+          {
+            "name": "share_amount",
+            "type": "u64"
+          },
+          {
+            "name": "random_seed",
+            "type": "u64"
+          },
+          {
+            "name": "expiry_time",
+            "type": "i64"
+          },
+          {
+            "name": "merkle_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "is_sol",
+            "type": "bool"
+          },
+          {
+            "name": "expiry_time_changes",
+            "type": "u8"
+          },
+          {
+            "name": "red_packet_id",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RedPacketClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "claimer",
+            "type": "pubkey"
+          },
+          {
+            "name": "red_packet",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "red_packet_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RedPacketCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "red_packet",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_amount",
+            "type": "u64"
+          },
+          {
+            "name": "packet_count",
+            "type": "u32"
+          },
+          {
+            "name": "red_packet_type",
+            "type": "u8"
+          },
+          {
+            "name": "expiry_time",
+            "type": "i64"
+          },
+          {
+            "name": "is_sol",
+            "type": "bool"
+          },
+          {
+            "name": "red_packet_id",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RedPacketRefunded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "red_packet",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "red_packet_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "is_claimed",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

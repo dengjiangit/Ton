@@ -14,11 +14,42 @@ import {
   Image,
   SimpleGrid,
   Icon,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Flex,
+  Container,
+  useBreakpointValue,
+  Card,
+  CardBody,
+  ButtonGroup,
+  IconButton,
+  CheckboxGroup,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverFooter,
+  useDisclosure,
+  RadioGroup,
+  Radio,
 } from '@chakra-ui/react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
 import { Connection, PublicKey } from '@solana/web3.js'
-import { RPC_ENDPOINT } from '../config/constants'
+import { RPC_ENDPOINT, buildApiUrl, LAUNCHPAD_CrowdFunding_PROGRAM_ID } from '../config/constants'
 import { CrowdfundingContract } from '../utils/crowdfundingContract'
 import ShareComponent from '../components/ShareComponent'
 import { IPFSService } from '../services/ipfsService'
@@ -71,6 +102,31 @@ interface IPFSCrowdfundingData {
   }
 }
 
+// 我的领取记录接口
+interface MyClaimRecord {
+  transaction: string
+  slot: number
+  contract_address: string
+  type: number // 0是claim领取空投 1是support支持众筹
+  user: string
+  red_packet: string
+  amount: number
+  timestamp: number
+  created_at: string
+  updated_at: string
+  token_name: string
+  token_symbol: string
+  mint: string
+}
+
+// 我的领取记录响应接口
+interface MyClaimRecordsResponse {
+  data: MyClaimRecord[]
+  message: string
+  success: boolean
+  total: number
+}
+
 export const ClaimLaunchpad: React.FC = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -97,6 +153,14 @@ export const ClaimLaunchpad: React.FC = () => {
   const [currentProjectId, setCurrentProjectId] = useState<bigint | null>(null)
   const [claimedAmount, setClaimedAmount] = useState<string>('')
   const [loadingClaimedAmount, setLoadingClaimedAmount] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+
+  // 我的领取记录相关状态
+  const [showMyClaims, setShowMyClaims] = useState(false)
+  const [myClaimRecords, setMyClaimRecords] = useState<MyClaimRecord[]>([])
+  const [loadingMyClaims, setLoadingMyClaims] = useState(false)
+  const [myClaimsPage, setMyClaimsPage] = useState(1)
+  const [myClaimsTotal, setMyClaimsTotal] = useState(0)
 
   // 从 URL 参数获取信息
   const creatorAddress = searchParams.get('creator')
@@ -313,7 +377,11 @@ export const ClaimLaunchpad: React.FC = () => {
 
   // 查询用户收到的代币金额
   const loadClaimedAmount = async () => {
-    if (!creatorAddress || !isConnected || !address || !mintAddress) return
+    if (!creatorAddress || !isConnected || !address || !mintAddress) {
+      console.log('❌ 缺少必要参数，跳过查询')
+      setLoadingClaimedAmount(false)
+      return
+    }
 
     setLoadingClaimedAmount(true)
     try {
@@ -327,65 +395,97 @@ export const ClaimLaunchpad: React.FC = () => {
       console.log('代币地址:', mintAddress)
       console.log('项目ID:', projectId.toString())
 
-      // 获取用户状态
+      // 获取用户状态（空投相关）
       const userState = await crowdfundingContract.getUserState(creatorPubkey, projectId, userPubkey)
+      console.log('🔍 用户状态:', userState)
       
-      if (userState.exists) {
-        console.log('✅ 用户状态存在:', userState)
-        
-        let totalClaimed = BigInt(0)
-        
-        // 如果是空投，检查空投金额
-        if (userState.airdropClaimed) {
-          // 从众筹信息中获取空投金额
-          try {
-            const redPacketInfo = await crowdfundingContract.getRedPacketInfo(creatorPubkey, projectId)
-            const totalSupply = BigInt(redPacketInfo.totalAmount)
-            const airdropAmount = totalSupply * BigInt(10) / BigInt(100) // 10% 空投
-            const airdropPerUser = airdropAmount / BigInt(1000) // 假设最多1000个用户
+      let totalClaimed = BigInt(0)
+      
+      // 只有领取空投才显示代币金额
+      if (userState.exists && userState.airdropClaimed) {
+        console.log('🎯 用户已领取空投，开始计算金额...')
+        // 从众筹信息中获取空投金额
+        try {
+          const redPacketInfo = await crowdfundingContract.getRedPacketInfo(creatorPubkey, projectId)
+          console.log('🔍 众筹红包信息:', redPacketInfo)
+          console.log('🔍 分配方案:', redPacketInfo.allocations)
+          
+          // 从分配方案中找到空投分配
+          const airdropAllocation = redPacketInfo.allocations?.find((alloc: any) => alloc.name === 'airdrop')
+          console.log('🔍 找到的空投分配:', airdropAllocation)
+          
+          if (airdropAllocation) {
+            // 使用合约中的实际空投分配金额
+            const airdropAmount = BigInt(airdropAllocation.amount)
+            const airdropMaxCount = BigInt(redPacketInfo.airdropMaxCount || 1000)
+            
+            // 按照合约逻辑计算每用户空投金额
+            const airdropPerUser = airdropAmount / airdropMaxCount
             totalClaimed += airdropPerUser
             console.log('空投金额:', airdropPerUser.toString())
-          } catch (error) {
-            console.log('获取空投金额失败:', error)
+            console.log('空投总金额:', airdropAmount.toString())
+            console.log('最大用户数:', airdropMaxCount.toString())
+          } else {
+            console.log('未找到空投分配信息，尝试查找其他可能的分配名称...')
+            // 尝试查找其他可能的分配名称
+            const allAllocations = redPacketInfo.allocations || []
+            console.log('所有分配方案:', allAllocations)
+            
+            // 如果找不到 'airdrop'，尝试使用第一个分配或者查找包含 'airdrop' 的分配
+            const alternativeAirdrop = allAllocations.find((alloc: any) => 
+              alloc.name.toLowerCase().includes('airdrop') || 
+              alloc.name.toLowerCase().includes('空投')
+            )
+            
+            if (alternativeAirdrop) {
+              console.log('找到替代空投分配:', alternativeAirdrop)
+              const airdropAmount = BigInt(alternativeAirdrop.amount)
+              const airdropMaxCount = BigInt(redPacketInfo.airdropMaxCount || 1000)
+              const airdropPerUser = airdropAmount / airdropMaxCount
+              totalClaimed += airdropPerUser
+              console.log('替代空投金额:', airdropPerUser.toString())
+            }
           }
+        } catch (error) {
+          console.log('获取空投金额失败:', error)
         }
-        
-        // 如果是众筹，检查众筹奖励
-        if (userState.amount && userState.amount > 0) {
-          // 计算众筹奖励（根据参与金额）
-          const supportAmount = BigInt(userState.amount)
-          const redPacketInfo = await crowdfundingContract.getRedPacketInfo(creatorPubkey, projectId)
-          const totalSupply = BigInt(redPacketInfo.totalAmount)
-          const crowdfundingAmount = totalSupply * BigInt(40) / BigInt(100) // 40% 众筹池
-          
-          // 根据参与金额计算奖励比例
-          let rewardRatio = BigInt(0)
-          if (supportAmount === BigInt(50_000_000)) { // 0.05 SOL
-            rewardRatio = BigInt(1) // 小额支持比例
-          } else if (supportAmount === BigInt(500_000_000)) { // 0.5 SOL
-            rewardRatio = BigInt(10) // 大额支持比例
-          }
-          
-          const crowdfundingReward = crowdfundingAmount * rewardRatio / BigInt(1000) // 假设最多1000个用户
-          totalClaimed += crowdfundingReward
-          console.log('众筹奖励:', crowdfundingReward.toString())
-        }
-        
-        // 转换为可读格式
-        const claimedInTokens = totalClaimed / BigInt(Math.pow(10, 9)) // 假设9位小数
-        setClaimedAmount(claimedInTokens.toString())
-        
-        console.log('✅ 用户总共收到代币:', claimedInTokens.toString())
-        
       } else {
-        console.log('用户状态不存在')
+        console.log('用户未领取空投，不显示代币金额')
         setClaimedAmount('0')
+        setLoadingClaimedAmount(false)
+        return
       }
+      
+      // 转换为可读格式
+      const claimedInTokens = totalClaimed / BigInt(Math.pow(10, 9)) // 假设9位小数
+      setClaimedAmount(claimedInTokens.toString())
+      
+      // console.log('✅ 用户总共收到代币:', claimedInTokens.toString())
+      // console.log('🔍 原始计算值:', totalClaimed.toString())
+      
+      // 如果计算出的金额为0，可能是因为链上状态还没更新
+      if (claimedInTokens === BigInt(0)) {
+        console.log('⚠️ 计算出的金额为0，可能是链上状态还未更新')
+      } else {
+        // 如果成功获取到非零金额，立即停止loading状态并重置重试计数器
+        setRetryCount(0)
+        setLoadingClaimedAmount(false)
+        console.log('✅ 成功获取到领取金额，停止重试并结束loading状态')
+      }
+      
     } catch (error) {
       console.error('❌ 查询用户收到代币金额失败:', error)
       setClaimedAmount('0')
     } finally {
-      setLoadingClaimedAmount(false)
+      // 只有在没有获取到非零金额时才设置loading为false
+      // 如果已经获取到非零金额，loading状态已经在上面设置为false了
+      if (!claimedAmount || claimedAmount === '0' || claimedAmount === '') {
+        console.log('🔍 没有获取到有效金额，设置loading状态为false')
+        setLoadingClaimedAmount(false)
+      } else {
+        console.log('🔍 已获取到有效金额，loading状态已设置为false')
+      }
+      console.log('🔍 最终claimedAmount状态:', claimedAmount)
     }
   }
 
@@ -477,6 +577,124 @@ export const ClaimLaunchpad: React.FC = () => {
     loadReferralInfo()
     loadClaimedAmount()
   }, [creatorAddress, isConnected, ipfsCID, address, projectIdParam])
+
+  // 当成功状态改变时，重新加载领取金额
+  useEffect(() => {
+    if (isSuccess && successType === 'airdrop') {
+      console.log('🎉 空投领取成功状态触发，开始加载领取金额...')
+      setRetryCount(0)
+      
+      // 存储所有定时器的ID，以便在成功时清除
+      const timers: NodeJS.Timeout[] = []
+      
+      // 立即检查一次状态
+      loadClaimedAmount()
+      
+      // 延迟一点时间确保交易已经确认
+      const timer1 = setTimeout(() => {
+        console.log('⏰ 延迟1秒后开始加载领取金额 (重试1)')
+        setRetryCount(1)
+        loadClaimedAmount()
+      }, 1000)
+      timers.push(timer1)
+      
+      // 如果第一次加载失败，3秒后再次尝试
+      const timer2 = setTimeout(() => {
+        console.log('⏰ 延迟3秒后再次尝试加载领取金额 (重试2)')
+        setRetryCount(2)
+        loadClaimedAmount()
+      }, 3000)
+      timers.push(timer2)
+      
+      // 如果还是失败，5秒后再次尝试
+      const timer3 = setTimeout(() => {
+        console.log('⏰ 延迟5秒后再次尝试加载领取金额 (重试3)')
+        setRetryCount(3)
+        loadClaimedAmount()
+      }, 5000)
+      timers.push(timer3)
+      
+      // 继续重试，10秒后再次尝试
+      const timer4 = setTimeout(() => {
+        console.log('⏰ 延迟10秒后再次尝试加载领取金额 (重试4)')
+        setRetryCount(4)
+        loadClaimedAmount()
+      }, 10000)
+      timers.push(timer4)
+      
+      // 继续重试，15秒后再次尝试
+      const timer5 = setTimeout(() => {
+        console.log('⏰ 延迟15秒后再次尝试加载领取金额 (重试5)')
+        setRetryCount(5)
+        loadClaimedAmount()
+      }, 15000)
+      timers.push(timer5)
+      
+      // 继续重试，20秒后再次尝试
+      const timer6 = setTimeout(() => {
+        console.log('⏰ 延迟20秒后再次尝试加载领取金额 (重试6)')
+        setRetryCount(6)
+        loadClaimedAmount()
+      }, 20000)
+      timers.push(timer6)
+      
+      // 继续重试，30秒后再次尝试
+      const timer7 = setTimeout(() => {
+        console.log('⏰ 延迟30秒后再次尝试加载领取金额 (重试7)')
+        setRetryCount(7)
+        loadClaimedAmount()
+      }, 30000)
+      timers.push(timer7)
+      
+      // 继续重试，45秒后再次尝试
+      const timer8 = setTimeout(() => {
+        console.log('⏰ 延迟45秒后再次尝试加载领取金额 (重试8)')
+        setRetryCount(8)
+        loadClaimedAmount()
+      }, 45000)
+      timers.push(timer8)
+      
+      // 设置超时保护，60秒后强制结束loading状态
+      const timeoutTimer = setTimeout(() => {
+        console.log('⏰ 60秒超时，强制结束loading状态')
+        setLoadingClaimedAmount(false)
+        setRetryCount(0)
+        if (!claimedAmount || claimedAmount === '') {
+          setClaimedAmount('查询超时，请手动刷新')
+        }
+      }, 60000)
+      timers.push(timeoutTimer)
+      
+      // 监听claimedAmount的变化，如果获取到金额就清除所有定时器
+      const checkSuccess = () => {
+        if (claimedAmount && claimedAmount !== '0' && claimedAmount !== '') {
+          console.log('✅ 已获取到领取金额，清除所有重试定时器')
+          timers.forEach(timer => clearTimeout(timer))
+          setRetryCount(0)
+        }
+      }
+      
+      // 设置一个监听器来检查claimedAmount的变化
+      const successCheckTimer = setInterval(checkSuccess, 500)
+      timers.push(successCheckTimer)
+      
+      // 清理函数
+      return () => {
+        timers.forEach(timer => {
+          if (typeof timer === 'number') {
+            clearTimeout(timer)
+          } else {
+            clearInterval(timer)
+          }
+        })
+      }
+    } else if (isSuccess && successType === 'crowdfunding') {
+      console.log('💰 众筹参与成功，不需要查询代币金额')
+      // 众筹参与成功时，确保loading状态为false
+      setLoadingClaimedAmount(false)
+      setRetryCount(0)
+    }
+  }, [isSuccess, successType, claimedAmount])
 
   // 检查连接状态
   useEffect(() => {
@@ -629,8 +847,8 @@ export const ClaimLaunchpad: React.FC = () => {
         setSuccessType('crowdfunding')
         setIsSuccess(true)
         
-        // 查询用户收到的代币金额
-        await loadClaimedAmount()
+        // 众筹参与成功后不查询代币金额，因为众筹不立即发放代币
+        // await loadClaimedAmount()
       }
     } catch (error: any) {
       console.error('参与失败:', error)
@@ -659,6 +877,94 @@ export const ClaimLaunchpad: React.FC = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 获取我的领取记录
+  const loadMyClaimRecords = async (page: number = 1) => {
+    if (!address) {
+      toast({
+        title: '错误',
+        description: '请先连接钱包',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    setLoadingMyClaims(true)
+    try {
+      // 获取空投记录 (type=0)
+      const airdropUrl = buildApiUrl(`/api/one_launch/crowdfunding_program/investor/list/${LAUNCHPAD_CrowdFunding_PROGRAM_ID.toString()}/${address}/0?pageSize=10&pageNum=${page}`)
+      console.log('🔍 获取空投记录:', airdropUrl)
+      
+      const airdropResponse = await fetch(airdropUrl)
+      const airdropData: MyClaimRecordsResponse = await airdropResponse.json()
+      
+      // 获取众筹支持记录 (type=1)
+      const supportUrl = buildApiUrl(`/api/one_launch/crowdfunding_program/investor/list/${LAUNCHPAD_CrowdFunding_PROGRAM_ID.toString()}/${address}/1?pageSize=10&pageNum=${page}`)
+      console.log('🔍 获取众筹支持记录:', supportUrl)
+      
+      const supportResponse = await fetch(supportUrl)
+      const supportData: MyClaimRecordsResponse = await supportResponse.json()
+      
+      // 合并记录并按时间排序
+      const airdropRecords = airdropData.success && Array.isArray(airdropData.data) ? airdropData.data : []
+      const supportRecords = supportData.success && Array.isArray(supportData.data) ? supportData.data : []
+      
+      const allRecords = [
+        ...airdropRecords,
+        ...supportRecords
+      ].sort((a, b) => b.timestamp - a.timestamp)
+      
+      console.log('✅ 获取我的领取记录成功:', {
+        airdropCount: airdropRecords.length,
+        supportCount: supportRecords.length,
+        totalRecords: allRecords.length
+      })
+      
+      setMyClaimRecords(allRecords)
+      setMyClaimsTotal(Math.max(airdropData.total || 0, supportData.total || 0))
+      setMyClaimsPage(page)
+      
+    } catch (error) {
+      console.error('❌ 获取我的领取记录失败:', error)
+      toast({
+        title: '获取记录失败',
+        description: '请稍后重试',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    } finally {
+      setLoadingMyClaims(false)
+    }
+  }
+
+  // 格式化金额显示
+  const formatAmount = (amount: number, type: number) => {
+    if (type === 0) {
+      // 空投记录，显示代币数量
+      return `${(amount / 1e9).toFixed(2)} ${myClaimRecords.find(r => r.type === 0)?.token_symbol || 'TOKEN'}`
+    } else {
+      // 众筹支持记录，显示SOL数量
+      return `${(amount / 1e9).toFixed(4)} SOL`
+    }
+  }
+
+  // 格式化时间显示
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleString('zh-CN')
+  }
+
+  // 获取类型显示文本
+  const getTypeText = (type: number) => {
+    return type === 0 ? '空投领取' : '众筹支持'
+  }
+
+  // 获取类型颜色
+  const getTypeColor = (type: number) => {
+    return type === 0 ? 'green' : 'blue'
   }
 
   if (!isConnected) {
@@ -718,69 +1024,173 @@ export const ClaimLaunchpad: React.FC = () => {
                 />
               </HStack>
 
-              {/* 收到代币信息卡片 */}
-              <Box w="50%" bg="#4079FF1A" borderRadius="lg" p={2} maxH="80px" overflow="hidden" boxShadow="0 4px 8px rgba(0,0,0,0.1)">
-                <VStack spacing={2} align="stretch">
-                  {/* 收到的代币金额 */}
-                  <HStack justify="space-between" w="full">
-                    <Text fontSize="sm" color="gray.700" fontWeight="medium">
-                      You received
-                    </Text>
-                    <Text fontSize="lg" color="green.600" fontWeight="bold">
-                      {loadingClaimedAmount ? (
-                        <Spinner size="sm" />
-                      ) : (
-                        `${claimedAmount || '0'} ${ipfsCrowdfundingData?.tokenSymbol || ''}`
-                      )}
-                    </Text>
-                  </HStack>
-                  
-                  {/* 交易哈希 */}
-                  <HStack justify="space-between" w="full">
-                    <Text fontSize="sm" color="gray.700" fontWeight="medium">
-                      Hash
-                    </Text>
-                    <HStack spacing={2}>
-                      <Text 
-                        fontSize="sm" 
-                        color="blue.600" 
-                        fontFamily="mono" 
-                        textDecoration="underline"
-                        cursor="pointer"
-                        onClick={() => {
-                          if (transactionSignature) {
-                            window.open(`https://explorer.solana.com/tx/${transactionSignature}`, '_blank');
-                          }
-                        }}
-                      >
-                        {transactionSignature ? 
-                          `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` : 
-                          'Pending...'
-                        }
+              {/* 收到代币信息卡片 - 只在空投领取时显示 */}
+              {successType === 'airdrop' && (
+                <Box w="50%" bg="#4079FF1A" borderRadius="lg" p={2} maxH="80px" overflow="hidden" boxShadow="0 4px 8px rgba(0,0,0,0.1)">
+                  <VStack spacing={2} align="stretch">
+                    {/* 收到的代币金额 */}
+                    <HStack justify="space-between" w="full">
+                      <Text fontSize="sm" color="gray.700" fontWeight="medium">
+                        You received
                       </Text>
-                      {transactionSignature && (
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          color="gray.500"
-                          _hover={{ color: "blue.500" }}
+                      <HStack spacing={2}>
+                      <Text fontSize="lg" color="green.600" fontWeight="bold">
+                        {loadingClaimedAmount ? (
+                          <HStack spacing={2}>
+                          <Spinner size="sm" />
+                            <VStack spacing={0} align="start">
+                              <Text fontSize="sm" color="gray.500">查询中...</Text>
+                              <Text fontSize="xs" color="gray.400">
+                                {retryCount > 0 ? `第${retryCount}次重试中` : '系统正在持续尝试获取最新数据'}
+                              </Text>
+                            </VStack>
+                          </HStack>
+                        ) : (
+                          claimedAmount === '查询超时，请手动刷新' ? (
+                            <Text color="orange.500" fontSize="sm">{claimedAmount}</Text>
+                        ) : (
+                          `${claimedAmount || '0'} ${ipfsCrowdfundingData?.tokenSymbol || ''}`
+                          )
+                        )}
+                      </Text>
+                        {!loadingClaimedAmount && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="gray.500"
+                            _hover={{ color: "blue.500" }}
+                            onClick={() => {
+                              console.log('🔄 手动刷新领取金额')
+                              loadClaimedAmount()
+                            }}
+                          >
+                            🔄
+                          </Button>
+                        )}
+                        {loadingClaimedAmount && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="gray.500"
+                            isDisabled
+                          >
+                            ⏳
+                          </Button>
+                        )}
+                      </HStack>
+                    </HStack>
+                    
+                    {/* 交易哈希 */}
+                    <HStack justify="space-between" w="full">
+                      <Text fontSize="sm" color="gray.700" fontWeight="medium">
+                        Hash
+                      </Text>
+                      <HStack spacing={2}>
+                        <Text 
+                          fontSize="sm" 
+                          color="blue.600" 
+                          fontFamily="mono" 
+                          textDecoration="underline"
+                          cursor="pointer"
                           onClick={() => {
-                            navigator.clipboard.writeText(transactionSignature);
-                            toast({
-                              title: "复制成功",
-                              description: "交易哈希已复制到剪贴板",
-                              status: "success",
-                              duration: 2000,
-                            });
+                            if (transactionSignature) {
+                              window.open(`https://explorer.solana.com/tx/${transactionSignature}`, '_blank');
+                            }
                           }}
                         >
-                          📋
-                        </Button>
-                      )}
+                          {transactionSignature ? 
+                            `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` : 
+                            'Pending...'
+                          }
+                        </Text>
+                        {transactionSignature && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="gray.500"
+                            _hover={{ color: "blue.500" }}
+                            onClick={() => {
+                              navigator.clipboard.writeText(transactionSignature);
+                              toast({
+                                title: "复制成功",
+                                description: "交易哈希已复制到剪贴板",
+                                status: "success",
+                                duration: 2000,
+                              });
+                            }}
+                          >
+                            📋
+                          </Button>
+                        )}
+                      </HStack>
                     </HStack>
-                  </HStack>
-                </VStack>
-              </Box>
+                  </VStack>
+                </Box>
+              )}
+
+              {/* 众筹参与成功信息 - 只在众筹参与时显示 */}
+              {successType === 'crowdfunding' && (
+                <Box w="50%" bg="#4079FF1A" borderRadius="lg" p={2} maxH="80px" overflow="hidden" boxShadow="0 4px 8px rgba(0,0,0,0.1)">
+                  <VStack spacing={2} align="stretch">
+                    {/* 参与成功信息 */}
+                    <HStack justify="space-between" w="full">
+                      <Text fontSize="sm" color="gray.700" fontWeight="medium">
+                        Crowdfunding Support
+                      </Text>
+                      <HStack spacing={2}>
+                        <Text fontSize="lg" color="blue.600" fontWeight="bold">
+                          Success!
+                        </Text>
+                      </HStack>
+                    </HStack>
+                    
+                    {/* 交易哈希 */}
+                    <HStack justify="space-between" w="full">
+                      <Text fontSize="sm" color="gray.700" fontWeight="medium">
+                        Hash
+                      </Text>
+                      <HStack spacing={2}>
+                        <Text 
+                          fontSize="sm" 
+                          color="blue.600" 
+                          fontFamily="mono" 
+                          textDecoration="underline"
+                          cursor="pointer"
+                          onClick={() => {
+                            if (transactionSignature) {
+                              window.open(`https://explorer.solana.com/tx/${transactionSignature}`, '_blank');
+                            }
+                          }}
+                        >
+                          {transactionSignature ? 
+                            `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` : 
+                            'Pending...'
+                          }
+                        </Text>
+                        {transactionSignature && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="gray.500"
+                            _hover={{ color: "blue.500" }}
+                            onClick={() => {
+                              navigator.clipboard.writeText(transactionSignature);
+                              toast({
+                                title: "复制成功",
+                                description: "交易哈希已复制到剪贴板",
+                                status: "success",
+                                duration: 2000,
+                              });
+                            }}
+                          >
+                            📋
+                          </Button>
+                        )}
+                      </HStack>
+                    </HStack>
+                  </VStack>
+                </Box>
+              )}
 
               {/* 社区链接 */}
               <VStack spacing={3}>
@@ -878,7 +1288,10 @@ export const ClaimLaunchpad: React.FC = () => {
               <VStack spacing={4}>
                 {/* 分享标题 */}
                 <Text fontSize="xl" fontWeight="bold" color="black" textAlign="center">
-                  Share your personal airdrop Claim Link!
+                  {successType === 'airdrop' 
+                    ? 'Share your personal airdrop Claim Link!' 
+                    : 'Share your personal crowdfunding support link!'
+                  }
                 </Text>
 
                 {/* 使用ShareComponent替换原有的分享内容 */}
@@ -888,7 +1301,10 @@ export const ClaimLaunchpad: React.FC = () => {
 
                 {/* 说明文字 */}
                 <Text fontSize="sm" color="gray.500" textAlign="center" px={4}>
-                  For every 10 people you invite, you'll get an extra airdrop after the crowdfunding is successfully completed.
+                  {successType === 'airdrop' 
+                    ? 'For every 10 people you invite, you\'ll get an extra airdrop after the crowdfunding is successfully completed.'
+                    : 'Invite friends to support this project and earn referral rewards!'
+                  }
                 </Text>
               </VStack>
             </VStack>
@@ -923,19 +1339,21 @@ export const ClaimLaunchpad: React.FC = () => {
               _active={{ bg: "#4079FF" }}
               _focus={{ bg: "#4079FF" }}
               onClick={() => {
-                // 可以添加查看我的领取记录功能
-                console.log('查看我的领取记录')
+                navigate('/my-claimed-crowdfunding')
               }}
             >
-              My Claim
+              My Claim Launchpad
             </Button>
           </VStack>
         </VStack>
       </Box>
+
     )
   }
 
   return (
+    <>
+      {/* 主页面内容 */}
     <Box
       minH="100vh"
       bg="gray.100"
@@ -1064,5 +1482,202 @@ export const ClaimLaunchpad: React.FC = () => {
         </VStack>
       </Box>
     </Box>
+
+      {/* 我的领取记录弹窗 */}
+      <Modal isOpen={showMyClaims} onClose={() => setShowMyClaims(false)} size="6xl">
+        <ModalOverlay />
+        <ModalContent maxW="90vw" maxH="90vh">
+          <ModalHeader>
+            <Text fontSize="2xl" fontWeight="bold" color="gray.800">
+              My Claimed Red Packets & AirDrops
+            </Text>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {loadingMyClaims ? (
+              <Flex justify="center" align="center" minH="200px">
+                <VStack spacing={4}>
+                  <Spinner size="xl" color="blue.500" />
+                  <Text>Loading records...</Text>
+                </VStack>
+              </Flex>
+            ) : myClaimRecords.length === 0 ? (
+              <VStack spacing={4} py={8}>
+                <Text fontSize="lg" color="gray.500">No records found</Text>
+                <Text fontSize="sm" color="gray.400">You haven't participated in any airdrops or crowdfunding yet</Text>
+              </VStack>
+            ) : (
+              <VStack spacing={6} align="stretch">
+                <Text fontSize="sm" color="gray.600">
+                  Found {myClaimsTotal} records
+                </Text>
+                
+                <Box
+                  bg="white"
+                  borderRadius="xl"
+                  boxShadow="lg"
+                  overflow="hidden"
+                  w="full"
+                >
+                  <TableContainer>
+                    <Table variant="simple">
+                      <Thead bg="gray.50">
+                        <Tr>
+                          <Th color="gray.700" fontWeight="600" fontSize="sm" py={4}>
+                            Token
+                          </Th>
+                          <Th color="gray.700" fontWeight="600" fontSize="sm" py={4}>
+                            Type
+                          </Th>
+                          <Th color="gray.700" fontWeight="600" fontSize="sm" py={4}>
+                            Amount
+                          </Th>
+                          <Th color="gray.700" fontWeight="600" fontSize="sm" py={4}>
+                            Date Claimed
+                          </Th>
+                          <Th color="gray.700" fontWeight="600" fontSize="sm" py={4}>
+                            Action
+                          </Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {myClaimRecords.map((record: MyClaimRecord, index: number) => (
+                          <Tr key={`${record.transaction}-${index}`} _hover={{ bg: 'gray.50' }}>
+                            {/* Token column */}
+                            <Td py={6}>
+                              <HStack spacing={3}>
+                                <Box
+                                  w="32px"
+                                  h="32px"
+                                  borderRadius="full"
+                                  bg="orange.400"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                  color="white"
+                                  fontSize="lg"
+                                  fontWeight="bold"
+                                >
+                                  {record.type === 0 ? 'A' : 'S'}
+                                </Box>
+                                <VStack spacing={1} align="start">
+                                  <Text fontWeight="medium" color="gray.800" fontSize="md">
+                                    {record.token_name || 'Unknown Token'}
+                                  </Text>
+                                  <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                                    {record.token_symbol || record.mint?.slice(0, 8) + '...' || 'Unknown'}
+                                  </Text>
+                                </VStack>
+                              </HStack>
+                            </Td>
+                            
+                            {/* Type column */}
+                            <Td py={6}>
+                              <Badge
+                                px={3}
+                                py={1}
+                                borderRadius="full"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                bg={record.type === 1 ? "green.50" : "blue.50"}
+                                color={record.type === 1 ? "green.600" : "blue.600"}
+                                border="1px solid"
+                                borderColor={record.type === 1 ? "green.200" : "blue.200"}
+                              >
+                                {getTypeText(record.type)}
+                              </Badge>
+                            </Td>
+                            
+                            {/* Amount column */}
+                            <Td py={6}>
+                              <Text color="gray.800" fontSize="md" fontWeight="medium">
+                                {formatAmount(record.amount, record.type)}
+                              </Text>
+                            </Td>
+                            
+                            {/* Date Claimed column */}
+                            <Td py={6}>
+                              <Text color="gray.600" fontSize="sm">
+                                {formatTime(record.timestamp)}
+                              </Text>
+                            </Td>
+                            
+                            {/* Action column */}
+                            <Td py={6}>
+                              <Button
+                                size="sm"
+                                bg="blue.500"
+                                color="white"
+                                _hover={{ bg: "blue.600" }}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(record.transaction);
+                                  toast({
+                                    title: "Copied Successfully",
+                                    description: "Transaction hash copied to clipboard",
+                                    status: "success",
+                                    duration: 2000,
+                                    isClosable: true,
+                                  });
+                                }}
+                                px={4}
+                                py={1}
+                              >
+                                Copy Hash
+                              </Button>
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+                
+                {/* 分页控制 */}
+                {myClaimsTotal > 10 && (
+                  <Flex justify="center" align="center" pt={6}>
+                    <ButtonGroup spacing={2}>
+                      <Button
+                        size="sm"
+                        bg="gray.600"
+                        color="white"
+                        _hover={{ bg: "gray.700" }}
+                        _disabled={{ bg: "gray.300", color: "gray.500" }}
+                        isDisabled={myClaimsPage <= 1}
+                        onClick={() => loadMyClaimRecords(myClaimsPage - 1)}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        size="sm"
+                        bg="#4079FF"
+                        color="white"
+                        _hover={{ bg: "#3068EE" }}
+                        _disabled={{ bg: "gray.300", color: "gray.500" }}
+                        isDisabled
+                      >
+                        {myClaimsPage} / {Math.ceil(myClaimsTotal / 10)}
+                      </Button>
+                      <Button
+                        size="sm"
+                        bg="gray.600"
+                        color="white"
+                        _hover={{ bg: "gray.700" }}
+                        _disabled={{ bg: "gray.300", color: "gray.500" }}
+                        isDisabled={myClaimsPage >= Math.ceil(myClaimsTotal / 10)}
+                        onClick={() => loadMyClaimRecords(myClaimsPage + 1)}
+                      >
+                        Next
+                      </Button>
+                    </ButtonGroup>
+                  </Flex>
+                )}
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
   )
-} 
+}
+
+ 

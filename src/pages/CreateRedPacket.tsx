@@ -93,19 +93,19 @@ function encodeCreateRedpacketArgs(totalAmount: BN, packetCount: number, redPack
   // 8 + 4 + 1 + (1 + 32) + (1 + 8) + (1 + 8) = 63 bytes (removed is_sol parameter)
   const buffer = Buffer.alloc(100); // Allocate a buffer large enough
   let offset = 0;
-
+  
   // total_amount: u64
   buffer.writeBigUInt64LE(BigInt(totalAmount.toString()), offset);
   offset += 8;
-
+  
   // packet_count: u32
   buffer.writeUInt32LE(packetCount, offset);
   offset += 4;
-
+  
   // red_packet_type: u8
   buffer.writeUInt8(redPacketType, offset);
   offset += 1;
-
+  
   // merkle_root: Option<[u8; 32]>
   if (merkleRoot && merkleRoot.length === 32) {
     buffer.writeUInt8(1, offset); // Some
@@ -116,7 +116,7 @@ function encodeCreateRedpacketArgs(totalAmount: BN, packetCount: number, redPack
     buffer.writeUInt8(0, offset); // None
     offset += 1;
   }
-
+  
   // expiry_days: Option<i64>
   if (expiryDays !== null && expiryDays !== undefined) {
     buffer.writeUInt8(1, offset); // Some
@@ -127,7 +127,7 @@ function encodeCreateRedpacketArgs(totalAmount: BN, packetCount: number, redPack
     buffer.writeUInt8(0, offset); // None
     offset += 1;
   }
-
+  
   // random_seed: Option<u64>
   if (randomSeed !== null && randomSeed !== undefined) {
     buffer.writeUInt8(1, offset); // Some
@@ -138,7 +138,7 @@ function encodeCreateRedpacketArgs(totalAmount: BN, packetCount: number, redPack
     buffer.writeUInt8(0, offset); // None
     offset += 1;
   }
-
+  
   return buffer.slice(0, offset);
 }
 
@@ -151,7 +151,7 @@ export const CreateRedPacket: React.FC = () => {
   // AppKit wallet
   const { address, isConnected } = useAppKitAccount()
   const { walletProvider } = useAppKitProvider('solana')
-
+  
   const publicKey = useMemo(() => {
     if (!address) return null;
     try {
@@ -160,9 +160,9 @@ export const CreateRedPacket: React.FC = () => {
       return null;
     }
   }, [address]);
-
+  
   const connected = isConnected && !!publicKey;
-
+  
   // Debug wallet connection status (only log once when connected)
   useEffect(() => {
     if (connected) {
@@ -175,14 +175,14 @@ export const CreateRedPacket: React.FC = () => {
       console.log('- walletProvider methods:', walletProvider ? Object.keys(walletProvider) : 'none');
     }
   }, [connected]); // Only trigger when connection status changes
-
+  
   // Get the type parameter from URL to determine which mode to show
   const getInitialMode = (): 'redpacket' | 'whitelist' => {
     const urlParams = new URLSearchParams(location.search);
     const type = urlParams.get('type');
     return type === 'airdrop' ? 'whitelist' : 'redpacket';
   };
-
+  
   // Create wallet object compatible with existing code
   const wallet = useMemo(() => {
     if (!publicKey || !walletProvider) return undefined;
@@ -225,10 +225,10 @@ export const CreateRedPacket: React.FC = () => {
   // Temporarily comment out useRedPacket as it uses old wallet adapter
   // const { createRedPacket, loading, getBalance } = useRedPacket()
   const loading = false;
-
+  
   // Create unified connection instance
   const connection = useMemo(() => new Connection(RPC_ENDPOINT, 'confirmed'), []);
-
+  
   const [amount, setAmount] = useState('')
   const [count, setCount] = useState('')
   const [message, setMessage] = useState('Congratulations, good luck!')
@@ -247,7 +247,7 @@ export const CreateRedPacket: React.FC = () => {
   const [twitterLink, setTwitterLink] = useState('')
   const [telegramLink, setTelegramLink] = useState('')
   const [discordLink, setDiscordLink] = useState('')
-
+  
   // Get token information
   const { tokenInfo, loading: tokenLoading, error: tokenError, displayName } = useTokenInfo(
     tokenAddress.trim() || undefined
@@ -306,12 +306,12 @@ export const CreateRedPacket: React.FC = () => {
       }
 
       setTokenTypeChecking(true)
-
+      
       try {
         // console.log('Real-time checking if token is Token 2022:', tokenAddress.trim())
         const isT2022 = await isToken2022(connection, tokenAddress.trim())
         setIsToken2022Detected(isT2022)
-
+        
         if (isT2022) {
           // console.log('⚠️ Token 2022 detected:', tokenAddress.trim())
         } else {
@@ -355,7 +355,7 @@ export const CreateRedPacket: React.FC = () => {
       // If it's SPL token but tokenInfo hasn't loaded yet, use default value 9 to avoid errors
       let decimals = 9;
       let symbolName = 'SOL';
-
+      
       if (isSol) {
         decimals = 9;
         symbolName = 'SOL';
@@ -370,9 +370,9 @@ export const CreateRedPacket: React.FC = () => {
           symbolName = 'Token';
         }
       }
-
+      
       const minAmount = 1 / Math.pow(10, decimals);
-
+      
       return input
         .split('\n')
         .map(line => line.trim())
@@ -382,40 +382,40 @@ export const CreateRedPacket: React.FC = () => {
           if (parts.length < 2) {
             throw new Error(`Line ${index + 1} format error: need address,amount two parts`);
           }
-
+          
           const [claimer, amount] = parts;
           const claimerTrimmed = claimer ? claimer.trim() : '';
           const amountStr = amount ? amount.trim() : '';
-
+          
           // Validate address format
           if (!claimerTrimmed) {
             throw new Error(`Line ${index + 1} address cannot be empty`);
           }
-
+          
           // Validate amount string
           if (!amountStr) {
             throw new Error(`Line ${index + 1} amount cannot be empty`);
           }
-
+          
           const amountNum = Number(amountStr);
-
+          
           // Validate amount
           if (isNaN(amountNum) || !isFinite(amountNum) || amountNum <= 0) {
             throw new Error(`Line ${index + 1} amount must be greater than 0, current value: ${amountStr}`);
           }
-
+          
           // Check if amount is too small
           if (amountNum < minAmount) {
             throw new Error(`Line ${index + 1} amount too small, minimum value is ${minAmount} ${symbolName}`);
           }
-
+          
           // Validate converted value
           const amountInSmallestUnit = Math.floor(amountNum * Math.pow(10, decimals));
-
+          
           if (!isFinite(amountInSmallestUnit) || amountInSmallestUnit <= 0) {
             throw new Error(`Line ${index + 1} amount conversion failed: ${amountStr}`);
           }
-
+          
           return {
             claimer: claimerTrimmed,
             amount: amountInSmallestUnit // Store as smallest unit
@@ -432,204 +432,204 @@ export const CreateRedPacket: React.FC = () => {
     // console.log('mode:', mode);
     // console.log('whitelistText:', whitelistText);
     // console.log('merkleRoot state:', merkleRoot);
-
+    
     // Prevent multiple submissions
     if (submittingStep2) {
       // console.log('Step 2 submission in progress, ignoring duplicate request');
       return;
     }
-
+    
     setSubmittingStep2(true);
-
+    
     try {
       // Enhanced parameter validation (refer to test code)
-      if (mode === 'redpacket') {
-        // Red packet mode validation
-        const countNum = parseInt(count) || 0;
-        const amountNum = parseFloat(amount) || 0;
-
-        if (countNum <= 0 || countNum > 100000) {
-          toast({
-            title: 'Parameter validation failed',
-            description: 'The number of red packets must be between 1 and 100,000',
-            status: 'error',
-            duration: 3000,
-          })
-          return
-        }
-
-        if (amountNum <= 0) {
-          toast({
-            title: 'Parameter validation failed',
-            description: 'The total amount must be greater than 0',
-            status: 'error',
-            duration: 3000,
-          })
-          return
-        }
-
-        // Verify if total amount is sufficient for allocation
-        const minTotalAmount = countNum * 0.000000001; // At least 1 lamport per share
-        if (amountNum < minTotalAmount) {
-          toast({
-            title: 'Parameter validation failed',
-            description: `Total amount insufficient for allocation to ${countNum} red packets. At least ${minTotalAmount.toFixed(9)} ${displayName} is required`,
-            status: 'error',
-            duration: 3000,
-          })
-          return
-        }
-      } else {
-        // Whitelist mode validation
-        let leaves: MerkleLeaf[];
-        try {
-          leaves = parseWhitelistInput(whitelistText);
-        } catch (error: any) {
+    if (mode === 'redpacket') {
+      // Red packet mode validation
+      const countNum = parseInt(count) || 0;
+      const amountNum = parseFloat(amount) || 0;
+      
+      if (countNum <= 0 || countNum > 100000) {
+      toast({
+        title: 'Parameter validation failed',
+          description: 'The number of red packets must be between 1 and 100,000',
+        status: 'error',
+        duration: 3000,
+      })
+      return
+    }
+      
+      if (amountNum <= 0) {
+        toast({
+          title: 'Parameter validation failed', 
+          description: 'The total amount must be greater than 0',
+          status: 'error',
+          duration: 3000,
+        })
+        return
+      }
+      
+      // Verify if total amount is sufficient for allocation
+      const minTotalAmount = countNum * 0.000000001; // At least 1 lamport per share
+      if (amountNum < minTotalAmount) {
+        toast({
+          title: 'Parameter validation failed',
+          description: `Total amount insufficient for allocation to ${countNum} red packets. At least ${minTotalAmount.toFixed(9)} ${displayName} is required`,
+          status: 'error',
+          duration: 3000,
+        })
+        return
+      }
+    } else {
+      // Whitelist mode validation
+      let leaves: MerkleLeaf[];
+      try {
+        leaves = parseWhitelistInput(whitelistText);
+      } catch (error: any) {
+        toast({ 
+          title: 'Whitelist format error', 
+          description: error.message || 'Please check whitelist format',
+          status: 'error', 
+          duration: 5000 
+        });
+        return;
+      }
+      
+      if (leaves.length === 0) {
+        toast({ 
+          title: 'Whitelist cannot be empty', 
+          description: 'Please enter whitelist data',
+          status: 'error', 
+          duration: 3000 
+        });
+        return;
+      }
+      
+      // Check whitelist size limit (must match contract limit)
+      if (leaves.length > 100000) {
+        toast({
+          title: 'Whitelist size exceeds limit',
+          description: `Maximum ${100000} addresses allowed, but found ${leaves.length} addresses`,
+          status: 'error',
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Validate whitelist format
+      for (let i = 0; i < leaves.length; i++) {
+        const leaf = leaves[i];
+        if (!leaf.claimer || leaf.amount <= 0) {
           toast({
             title: 'Whitelist format error',
-            description: error.message || 'Please check whitelist format',
-            status: 'error',
-            duration: 5000
-          });
-          return;
-        }
-
-        if (leaves.length === 0) {
-          toast({
-            title: 'Whitelist cannot be empty',
-            description: 'Please enter whitelist data',
-            status: 'error',
-            duration: 3000
-          });
-          return;
-        }
-
-        // Check whitelist size limit (must match contract limit)
-        if (leaves.length > 100000) {
-          toast({
-            title: 'Whitelist size exceeds limit',
-            description: `Maximum ${100000} addresses allowed, but found ${leaves.length} addresses`,
+            description: `Incorrect format in row ${i + 1}: ${whitelistText.split('\n')[i]}`,
             status: 'error',
             duration: 5000,
           });
           return;
         }
-
-        // Validate whitelist format
-        for (let i = 0; i < leaves.length; i++) {
-          const leaf = leaves[i];
-          if (!leaf.claimer || leaf.amount <= 0) {
-            toast({
-              title: 'Whitelist format error',
-              description: `Incorrect format in row ${i + 1}: ${whitelistText.split('\n')[i]}`,
-              status: 'error',
-              duration: 5000,
-            });
-            return;
-          }
-
-          // Validate address format
-          try {
-            new PublicKey(leaf.claimer);
-          } catch (err) {
-            toast({
-              title: 'Whitelist address invalid',
-              description: `Incorrect format in row ${i + 1}: ${leaf.claimer}`,
-              status: 'error',
-              duration: 5000,
-            });
-            return;
-          }
-        }
-
+        
+        // Validate address format
         try {
-          const { root } = generateMerkleTree(leaves);
-          const rootHex = root.toString('hex');
-          setMerkleRoot(rootHex);
-        } catch (error) {
-          console.error('Failed to generate Merkle Root:', error);
+          new PublicKey(leaf.claimer);
+        } catch (err) {
           toast({
-            title: 'Failed to process whitelist',
-            description: 'Error generating Merkle tree',
+            title: 'Whitelist address invalid',
+            description: `Incorrect format in row ${i + 1}: ${leaf.claimer}`,
             status: 'error',
             duration: 5000,
           });
           return;
         }
       }
+      
+      try {
+        const { root } = generateMerkleTree(leaves);
+        const rootHex = root.toString('hex');
+        setMerkleRoot(rootHex);
+      } catch (error) {
+        console.error('Failed to generate Merkle Root:', error);
+        toast({
+          title: 'Failed to process whitelist',
+          description: 'Error generating Merkle tree',
+          status: 'error',
+          duration: 5000,
+        });
+        return;
+      }
+    }
 
-      // Check if the token is Token 2022 (not supported)
-      if (tokenAddress && tokenAddress.trim() !== '') {
-        try {
-          const isT2022 = await isToken2022(connection, tokenAddress.trim());
-          if (isT2022) {
-            toast({
-              title: 'Token 2022 Not Supported',
-              description: 'Sorry, the current version does not support Token 2022 (SPL Token 2022) tokens. Please use standard SPL Token instead.',
-              status: 'error',
-              duration: 5000,
-              isClosable: true,
-            });
-            return;
-          }
-        } catch (error) {
-          console.error('Failed to check token type:', error);
+    // Check if the token is Token 2022 (not supported)
+    if (tokenAddress && tokenAddress.trim() !== '') {
+      try {
+        const isT2022 = await isToken2022(connection, tokenAddress.trim());
+        if (isT2022) {
           toast({
-            title: 'Token Detection Failed',
-            description: 'Unable to detect token type, please check if the token address is correct.',
+            title: 'Token 2022 Not Supported',
+            description: 'Sorry, the current version does not support Token 2022 (SPL Token 2022) tokens. Please use standard SPL Token instead.',
             status: 'error',
-            duration: 3000,
+            duration: 5000,
+            isClosable: true,
           });
           return;
         }
+      } catch (error) {
+        console.error('Failed to check token type:', error);
+        toast({
+          title: 'Token Detection Failed',
+          description: 'Unable to detect token type, please check if the token address is correct.',
+          status: 'error',
+          duration: 3000,
+        });
+        return;
       }
+    }
 
-      // Save community links (if user has filled them)
-      const hasAnyLink = twitterLink.trim() || telegramLink.trim() || discordLink.trim();
+    // Save community links (if user has filled them)
+    const hasAnyLink = twitterLink.trim() || telegramLink.trim() || discordLink.trim();
 
-      if (hasAnyLink) {
-        try {
-          // Submit all community links at once
-          const requestBody = {
-            creator: publicKey?.toString() || '',
-            discord_url: discordLink.trim() || '',
-            mint: tokenAddress.trim() || SOL_MINT_ADDRESS, // 如果没有tokenAddress则使用SOL官方mint地址
-            tg_url: telegramLink.trim() || '',
-            x_url: twitterLink.trim() || '',
-            contract_address: RED_PACKET_PROGRAM_ID.toString() // 添加合约地址参数
-          };
+    if (hasAnyLink) {
+      try {
+        // Submit all community links at once
+        const requestBody = {
+          creator: publicKey?.toString() || '',
+          discord_url: discordLink.trim() || '',
+          mint: tokenAddress.trim() || SOL_MINT_ADDRESS, // 如果没有tokenAddress则使用SOL官方mint地址
+          tg_url: telegramLink.trim() || '',
+          x_url: twitterLink.trim() || '',
+          contract_address: RED_PACKET_PROGRAM_ID.toString() // 添加合约地址参数
+        };
 
-          const response = await fetch(buildApiUrl('/api/community_link/save_community_link'), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-          });
+        const response = await fetch(buildApiUrl('/api/community_link/save_community_link'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const result = await response.json();
-
-          const linkCount = [twitterLink.trim(), telegramLink.trim(), discordLink.trim()].filter(Boolean).length;
-          toast({
-            title: 'Community links saved',
-            description: `Saved ${linkCount} community links`,
-            status: 'success',
-            duration: 3000,
-          });
-        } catch (error) {
-          // Community link save failure does not block main flow, only show warning
-          toast({
-            title: 'Failed to save community links',
-            description: 'But does not affect red packet creation',
-            status: 'warning',
-            duration: 3000,
-          });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const result = await response.json();
+        
+        const linkCount = [twitterLink.trim(), telegramLink.trim(), discordLink.trim()].filter(Boolean).length;
+        toast({
+          title: 'Community links saved',
+          description: `Saved ${linkCount} community links`,
+          status: 'success',
+          duration: 3000,
+        });
+      } catch (error) {
+        // Community link save failure does not block main flow, only show warning
+        toast({
+          title: 'Failed to save community links',
+          description: 'But does not affect red packet creation',
+          status: 'warning',
+          duration: 3000,
+        });
       }
+    }
 
       // Validation passed, proceed to next step
       setCurrentStep(3);
@@ -645,25 +645,25 @@ export const CreateRedPacket: React.FC = () => {
   // Contract call method for step 2
   const handleContractCreate = async () => {
     if (!wallet || !publicKey) {
-      toast({
+      toast({ 
         title: 'Please connect wallet',
-        status: 'error',
+        status: 'error', 
         duration: 3000,
       })
       return
     }
-
+    
     // Prevent duplicate submission check
     if (creating) {
       // console.log('Transaction in progress, ignoring duplicate request');
       return;
     }
-
+    
     setCreating(true)
-
+    
     try {
       // console.log('=== Starting red packet creation ===')
-
+      
       // 1. Determine red packet parameters
       const isSol = !tokenAddress || tokenAddress.trim() === '';
       let totalAmountBN: BN;
@@ -671,7 +671,7 @@ export const CreateRedPacket: React.FC = () => {
       let redPacketType: number;
       let merkleRootBuffer: Buffer | null = null;
       let randomSeed: BN | null = null;
-
+      
       if (mode === 'whitelist') {
         // Whitelist mode
         const leaves = parseWhitelistInput(whitelistText);
@@ -686,7 +686,7 @@ export const CreateRedPacket: React.FC = () => {
         // Normal mode
         const amountNum = parseFloat(amount) || 0;
         const countNum = parseInt(count) || 0;
-
+        
         if (isSol) {
           totalAmountBN = new BN(Math.floor(amountNum * LAMPORTS_PER_SOL));
         } else {
@@ -699,10 +699,10 @@ export const CreateRedPacket: React.FC = () => {
           randomSeed = new BN(Math.floor(Math.random() * 1000000));
         }
       }
-
+      
       const expiryDays = parseInt(expiry.replace('d', ''));
-
-
+      
+      
       // console.log('Red packet parameters:', {
       //   totalAmount: totalAmountBN.toString(),
       //   packetCount,
@@ -710,18 +710,18 @@ export const CreateRedPacket: React.FC = () => {
       //   isSol,
       //   expiryDays,
       // });
-
+      
       // 2. Calculate PDA addresses
       const [creatorStatePda] = PublicKey.findProgramAddressSync(
         [Buffer.from(CREATOR_STATE_SEED), publicKey.toBuffer()],
         RED_PACKET_PROGRAM_ID
       );
-
+      
       // 3. Check and initialize creator_state account
       let creatorStateInfo = await connection.getAccountInfo(creatorStatePda);
       if (!creatorStateInfo) {
         // console.log('Initializing creator_state account...');
-
+        
         const initIx = new TransactionInstruction({
           keys: [
             { pubkey: creatorStatePda, isSigner: false, isWritable: true },
@@ -731,31 +731,31 @@ export const CreateRedPacket: React.FC = () => {
           programId: RED_PACKET_PROGRAM_ID,
           data: Buffer.from([133, 18, 167, 91, 115, 223, 51, 249]), // initialize_creator_state discriminator
         });
-
+        
         const initTx = new Transaction().add(initIx);
         initTx.feePayer = publicKey;
         initTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
+        
         const signedInitTx = await wallet.signTransaction(initTx);
         const initSig = await connection.sendRawTransaction(signedInitTx.serialize());
         await connection.confirmTransaction(initSig, 'confirmed');
-
+        
         // console.log('creator_state initialization successful:', initSig);
-
+        
         // Re-fetch account info
         creatorStateInfo = await connection.getAccountInfo(creatorStatePda);
       }
-
+      
       // 4. Get next red packet ID
       if (!creatorStateInfo || creatorStateInfo.data.length < 17) {
         throw new Error('creator_state account data exception');
       }
-
+      
       const nextRedPacketId = creatorStateInfo.data.readBigUInt64LE(8);
       const redPacketIdBN = new BN(nextRedPacketId.toString());
-
+      
       // console.log('Next red packet ID:', redPacketIdBN.toString());
-
+      
       // 5. Calculate red packet PDA
       const [redPacketPda] = PublicKey.findProgramAddressSync(
         [
@@ -765,15 +765,15 @@ export const CreateRedPacket: React.FC = () => {
         ],
         RED_PACKET_PROGRAM_ID
       );
-
+      
       // console.log('Red packet PDA address:', redPacketPda.toString());
-
+      
       // 6. Set account addresses
       let mint: PublicKey;
       let creatorAta: PublicKey;
       let poolAta: PublicKey;
       let tokenProgramId = TOKEN_PROGRAM_ID; // Declare in advance
-
+      
       if (isSol) {
         mint = SystemProgram.programId; // SOL uses system program ID as mint
         creatorAta = publicKey; // In SOL mode, creator_ata is the creator
@@ -783,24 +783,24 @@ export const CreateRedPacket: React.FC = () => {
         // 🔥 Key fix: get token program ID first, then calculate ATA
         tokenProgramId = await getTokenProgramId(connection, mint);
         // console.log('Detected token program:', tokenProgramId.toString() === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' ? 'Token 2022' : 'SPL Token');
-
+        
         // Use correct token program ID to calculate ATA addresses
         creatorAta = await getAssociatedTokenAddress(
-          mint,
-          publicKey,
-          false,
-          tokenProgramId,
+          mint, 
+          publicKey, 
+          false, 
+          tokenProgramId, 
           ASSOCIATED_TOKEN_PROGRAM_ID
         );
         poolAta = await getAssociatedTokenAddress(
-          mint,
-          redPacketPda,
-          true,
-          tokenProgramId,
+          mint, 
+          redPacketPda, 
+          true, 
+          tokenProgramId, 
           ASSOCIATED_TOKEN_PROGRAM_ID
         );
       }
-
+      
       // 7. Balance check
       if (isSol) {
         const balance = await connection.getBalance(publicKey);
@@ -811,19 +811,19 @@ export const CreateRedPacket: React.FC = () => {
       } else {
         // Check token balance - handling both SPL Token and Token 2022
         const tokenTypeStr = tokenProgramId.toString() === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' ? 'Token 2022' : 'SPL Token';
-
+        
         try {
           // First check if ATA account exists
           const ataInfo = await connection.getAccountInfo(creatorAta);
           if (!ataInfo) {
             throw new Error(`You do not have this ${tokenTypeStr} token account, please add this token to your wallet or perform a receive operation once`);
           }
-
+          
           const tokenAccount = await getAccount(connection, creatorAta, 'confirmed', tokenProgramId);
           if (Number(tokenAccount.amount) < totalAmountBN.toNumber()) {
             throw new Error(`${tokenTypeStr} balance insufficient`);
           }
-
+          
           // console.log(`✅ ${tokenTypeStr} balance check passed:`, Number(tokenAccount.amount));
         } catch (error: any) {
           // console.error(`❌ ${tokenTypeStr} balance check failed:`, error);
@@ -832,19 +832,19 @@ export const CreateRedPacket: React.FC = () => {
           }
           throw error;
         }
-
+        
         // Check SOL balance (for paying fees)
         const solBalance = await connection.getBalance(publicKey);
         if (solBalance < 5_000_000) {
           throw new Error('SOL balance insufficient, unable to pay creation fee');
         }
       }
-
-      // 8. tokenProgramId has been set above
-
+      
+              // 8. tokenProgramId has been set above
+      
       // 9. Build transaction instruction
       const feeReceiver = new PublicKey("15hPXzWgid1UWUKnp4KvtZEbaNUCWkPK79cb5uqHysf");
-
+      
       // console.log('Account info:', {
       //   creator: publicKey.toString(),
       //   creatorState: creatorStatePda.toString(),
@@ -856,9 +856,9 @@ export const CreateRedPacket: React.FC = () => {
       //   tokenProgram: tokenProgramId.toString(),
       //   isSol: isSol
       // });
-
+      
       let createIx: TransactionInstruction;
-
+      
       // Use specialized contract methods based on token type
       // This provides better type safety and eliminates is_sol parameter
       if (isSol) {
@@ -920,7 +920,7 @@ export const CreateRedPacket: React.FC = () => {
       const tx = new Transaction().add(
         ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 })
       );
-
+      
       // For Token red packets, check and create ATA accounts if they don't exist
       if (!isSol) {
         // Check if pool ATA account exists, create if not
@@ -938,16 +938,16 @@ export const CreateRedPacket: React.FC = () => {
           tx.add(createPoolAtaIx);
         }
       }
-
+      
       // Add the main create instruction
       tx.add(createIx);
-
+      
       tx.feePayer = publicKey;
       const { blockhash } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
-
+      
       // console.log('Sending transaction...');
-
+      
       // console.log('【Create Red Packet】Transaction details:', {
       //   totalAmount: `${(totalAmountBN.toNumber() / (isSol ? 1e9 : Math.pow(10, tokenInfo?.decimals || 9))).toFixed(6)} ${isSol ? 'SOL' : (tokenInfo?.symbol || 'Token')}`,
       //   packetCount,
@@ -955,39 +955,39 @@ export const CreateRedPacket: React.FC = () => {
       //   isSol,
       //   method: isSol ? 'create_sol_redpacket' : 'create_token_redpacket'
       // })
-
+      
       // Send transaction
       const signedTx = await wallet.signTransaction(tx);
       const signature = await connection.sendRawTransaction(signedTx.serialize(), {
         skipPreflight: true,
         maxRetries: 3
       });
-
+      
       // console.log('Transaction sent:', signature);
       // console.log('Waiting for transaction confirmation...');
-
+      
       // Wait for transaction confirmation
       await connection.confirmTransaction(signature, 'confirmed');
-
+      
       // console.log('Red packet created successfully!', signature);
-
+      
       // Save transaction signature
       setLastTransactionSignature(signature);
-
+      
       toast({
         title: 'Red packet created successfully',
         description: `Transaction hash: ${signature}`,
         status: 'success',
         duration: 6000,
       });
-
+      
       // 10. Handle whitelist IPFS upload and generate share link
       let finalIpfsCID = '';
-
+      
       if (mode === 'whitelist' && whitelistText.trim()) {
         try {
           const leaves = parseWhitelistInput(whitelistText);
-
+          
           // Convert to IPFSWhitelistData format
           const whitelistData: IPFSWhitelistData = {
             redPacketId: redPacketIdBN.toString(),
@@ -1005,7 +1005,7 @@ export const CreateRedPacket: React.FC = () => {
               tokenName: tokenInfo?.name || undefined
             }
           };
-
+          
           const cid = await ipfsService.uploadWhitelistToIPFS(whitelistData);
           // console.log('Whitelist data uploaded to IPFS successfully:', cid);
           finalIpfsCID = cid;
@@ -1014,7 +1014,7 @@ export const CreateRedPacket: React.FC = () => {
           console.error('IPFS upload failed:', error);
         }
       }
-
+      
       // 11. Generate share link - use latest CID and include red packet address
       const tokenNameParam = `&tokenName=${encodeURIComponent(tokenInfo?.name || 'Unknown')}`;
       const tokenContractParam = tokenAddress ? `&tokenContract=${encodeURIComponent(tokenAddress)}` : '';
@@ -1028,13 +1028,13 @@ export const CreateRedPacket: React.FC = () => {
         + tokenContractParam
         + ipfsCIDParam
         + redPacketAddressParam;
-
+      
       setShareLink(newShareLink);
       setCurrentStep(4);
-
+      
     } catch (error: any) {
       console.error('Red packet creation failed:', error);
-
+      
       // Parse error message
       let errorMessage = 'Creation failed';
       if (error.message) {
@@ -1045,7 +1045,7 @@ export const CreateRedPacket: React.FC = () => {
           errorMessage = error.message;
         }
       }
-
+      
       toast({
         title: 'Red packet creation failed',
         description: errorMessage,
@@ -1088,9 +1088,9 @@ export const CreateRedPacket: React.FC = () => {
       {/* Header navigation is now handled uniformly by Header component */}
 
       {/* Content area */}
-      <Box minH="100vh" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="40px">
+      <Box minH="100vh" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="80px">
         {currentStep === 1 && (
-          <VStack spacing={4} align="center" w="100%" mt="20px">
+          <VStack spacing={6} align="center" w="100%" mt="40px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1098,12 +1098,12 @@ export const CreateRedPacket: React.FC = () => {
               {/* Top-left corner mode icon and text */}
               <Box position="absolute" top="-80px" left="-80px" zIndex={10}>
                 <Box position="relative" display="inline-block">
-                  {/* <Image
+                  <Image
                     src={'/redpacket-parachute.png'}
                     alt={mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
                     boxSize="160px"
                     objectFit="contain"
-                  /> */}
+                  />
                   <Box
                     position="absolute"
                     bottom="8px"
@@ -1123,9 +1123,9 @@ export const CreateRedPacket: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
-
+              
               <VStack spacing={4} align="stretch" color="gray.800">
-                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={0} mt={2}>Step 1: deposit tokens into the AIDR contract</Text>
+                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={2}>Step 1: deposit tokens into the AIDR contract</Text>
                 <FormControl>
                   <FormLabel color="gray.800" textAlign="center">Enter Your Token Contract</FormLabel>
                   <InputGroup>
@@ -1137,7 +1137,7 @@ export const CreateRedPacket: React.FC = () => {
                       _placeholder={{ color: 'gray.500' }}
                     />
                   </InputGroup>
-
+                  
                   {/* Token information display */}
                   {tokenAddress.trim() && (
                     <Box mt={2}>
@@ -1146,22 +1146,22 @@ export const CreateRedPacket: React.FC = () => {
                         <Alert status="error" size="sm" mb={2}>
                           <AlertIcon />
                           <Box>
-                            <Text fontSize="sm" fontWeight="bold">⚠️ Token 2022 Not Supported</Text>
-                            <Text fontSize="xs" color="red.600">
-                              Current version does not support SPL Token 2022 tokens. Please use standard SPL Token instead.
-                            </Text>
+                                                         <Text fontSize="sm" fontWeight="bold">⚠️ Token 2022 Not Supported</Text>
+                             <Text fontSize="xs" color="red.600">
+                               Current version does not support SPL Token 2022 tokens. Please use standard SPL Token instead.
+                             </Text>
                           </Box>
                         </Alert>
                       )}
-
+                      
                       {/* Token type checking indicator */}
                       {tokenTypeChecking && (
                         <Alert status="info" size="sm" mb={2}>
                           <AlertIcon />
-                          <Text fontSize="sm">Detecting token type...</Text>
+                                                     <Text fontSize="sm">Detecting token type...</Text>
                         </Alert>
                       )}
-
+                      
                       {/* Token information */}
                       {!isToken2022Detected && (
                         <>
@@ -1189,66 +1189,66 @@ export const CreateRedPacket: React.FC = () => {
                     </Box>
                   )}
                 </FormControl>
-
+                
                 {/* If no token address is entered, show common token selection */}
                 {!tokenAddress.trim() && (
                   <Box>
                     <Text fontSize="sm" color="gray.600" mb={2}>Or select common tokens:</Text>
                     <SimpleGrid columns={2} spacing={2}>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
                         onClick={() => setTokenAddress('')}
                         bg={!tokenAddress ? 'blue.50' : 'white'}
                         borderColor={!tokenAddress ? 'blue.300' : 'gray.300'}
                         color={!tokenAddress ? 'blue.700' : 'gray.700'}
                         fontWeight={!tokenAddress ? 'semibold' : 'normal'}
-                        _hover={{
+                        _hover={{ 
                           bg: !tokenAddress ? 'blue.100' : 'gray.50',
                           color: !tokenAddress ? 'blue.800' : 'gray.800'
                         }}
                       >
                         SOL
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
                         onClick={() => setTokenAddress('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v')}
                         bg={tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'blue.50' : 'white'}
                         borderColor={tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'blue.300' : 'gray.300'}
                         color={tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'blue.700' : 'gray.700'}
                         fontWeight={tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'semibold' : 'normal'}
-                        _hover={{
+                        _hover={{ 
                           bg: tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'blue.100' : 'gray.50',
                           color: tokenAddress === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? 'blue.800' : 'gray.800'
                         }}
                       >
                         USDC
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
                         onClick={() => setTokenAddress('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB')}
                         bg={tokenAddress === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' ? 'blue.50' : 'white'}
                         borderColor={tokenAddress === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' ? 'blue.300' : 'gray.300'}
                         color={tokenAddress === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' ? 'blue.700' : 'gray.700'}
                         fontWeight={tokenAddress === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' ? 'semibold' : 'normal'}
-                        _hover={{
+                        _hover={{ 
                           bg: tokenAddress === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' ? 'blue.100' : 'gray.50',
                           color: tokenAddress === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' ? 'blue.800' : 'gray.800'
                         }}
                       >
                         USDT
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
                         onClick={() => setTokenAddress('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R')}
                         bg={tokenAddress === '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' ? 'blue.50' : 'white'}
                         borderColor={tokenAddress === '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' ? 'blue.300' : 'gray.300'}
                         color={tokenAddress === '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' ? 'blue.700' : 'gray.700'}
                         fontWeight={tokenAddress === '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' ? 'semibold' : 'normal'}
-                        _hover={{
+                        _hover={{ 
                           bg: tokenAddress === '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' ? 'blue.100' : 'gray.50',
                           color: tokenAddress === '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' ? 'blue.800' : 'gray.800'
                         }}
@@ -1261,7 +1261,7 @@ export const CreateRedPacket: React.FC = () => {
               </VStack>
             </Box>
             {/* Button area */}
-            <HStack mt={0} spacing={8} justify="center">
+            <HStack mt={6} spacing={8} justify="center">
               <Button
                 onClick={() => navigate('/')}
                 variant="outline"
@@ -1287,7 +1287,7 @@ export const CreateRedPacket: React.FC = () => {
           </VStack>
         )}
         {currentStep === 2 && (
-          <VStack spacing={4} align="center" w="100%" mt="40px">
+          <VStack spacing={6} align="center" w="100%" mt="40px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1296,12 +1296,12 @@ export const CreateRedPacket: React.FC = () => {
               {/* Top-left corner mode icon and text */}
               <Box position="absolute" top="-80px" left="-80px" zIndex={10}>
                 <Box position="relative" display="inline-block">
-                  {/* <Image
+                  <Image
                     src={'/redpacket-parachute.png'}
                     alt={mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
                     boxSize="160px"
                     objectFit="contain"
-                  /> */}
+                  />
                   <Box
                     position="absolute"
                     bottom="8px"
@@ -1323,15 +1323,15 @@ export const CreateRedPacket: React.FC = () => {
               </Box>
 
               <VStack spacing={0} align="stretch" color="gray.800">
-                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={0}>
+                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={2}>
                   Step 2: Set {mode === 'redpacket' ? 'Red Packet' : 'Whitelist Airdrop'} Parameters
                 </Text>
-                <Divider mb={0} />
+                <Divider mb={2}/>
                 {/* Form content with dividers to simulate table */}
                 <Box as="form">
                   {mode === "redpacket" && (
-                    <VStack spacing={2} align="stretch">
-                      <HStack py={0}>
+                    <VStack spacing={0} align="stretch">
+                      <HStack py={2}>
                         <FormLabel color="gray.800" minW="140px" mb={0}>Total airdrop amount:</FormLabel>
                         <Input
                           type="number"
@@ -1352,8 +1352,8 @@ export const CreateRedPacket: React.FC = () => {
                           flex={1}
                         />
                       </HStack>
-                      <Divider />
-                      <HStack py={0}>
+                      <Divider/>
+                      <HStack py={2}>
                         <FormLabel color="gray.800" minW="140px" mb={0}>Number of recipients:</FormLabel>
                         <Input
                           type="number"
@@ -1374,11 +1374,11 @@ export const CreateRedPacket: React.FC = () => {
                           flex={1}
                         />
                       </HStack>
-                      <Divider />
-                      <HStack py={0} align="center">
+                      <Divider/>
+                      <HStack py={2} align="center">
                         <FormLabel color="gray.800" minW="140px" mb={0}>Amount type:</FormLabel>
                         <HStack spacing={4} flex={1}>
-                          <HStack spacing={0}>
+                          <HStack spacing={2}>
                             <input
                               type="radio"
                               name="amountType"
@@ -1388,7 +1388,7 @@ export const CreateRedPacket: React.FC = () => {
                             />
                             <Text color="gray.800">Random</Text>
                           </HStack>
-                          <HStack spacing={0}>
+                          <HStack spacing={2}>
                             <input
                               type="radio"
                               name="amountType"
@@ -1400,8 +1400,8 @@ export const CreateRedPacket: React.FC = () => {
                           </HStack>
                         </HStack>
                       </HStack>
-                      <Divider />
-                      <HStack py={0} align="center">
+                      <Divider/>
+                      <HStack py={2} align="center">
                         <FormLabel color="gray.800" minW="140px" mb={0}>Set expiry time:</FormLabel>
                         <Select
                           value={expiry}
@@ -1421,10 +1421,10 @@ export const CreateRedPacket: React.FC = () => {
                           <option value="30d">1 Month</option>
                         </Select>
                       </HStack>
-                      <Divider />
-                      <VStack spacing={2} py={1} align="stretch">
+                      <Divider/>
+                      <VStack spacing={3} py={2} align="stretch">
                         <Text color="gray.800" fontWeight="medium" mb={0}>Community links (optional):</Text>
-
+                        
                         <HStack>
                           <HStack color="gray.600" minW="100px" fontSize="sm">
                             <img src={TwitterLogo} alt="Twitter" width={14} height={14} />
@@ -1439,9 +1439,9 @@ export const CreateRedPacket: React.FC = () => {
                             flex={1}
                           />
                         </HStack>
-
+                        
                         <HStack>
-                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={0}>
+                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={1}>
                             <img src={TelegramLogo} alt="Telegram" width={14} height={14} />
                             <Text>Telegram:</Text>
                           </HStack>
@@ -1454,9 +1454,9 @@ export const CreateRedPacket: React.FC = () => {
                             flex={1}
                           />
                         </HStack>
-
+                        
                         <HStack>
-                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={0}>
+                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={1}>
                             <img src={DiscordLogo} alt="Discord" width={14} height={14} />
                             <Text>Discord:</Text>
                           </HStack>
@@ -1513,7 +1513,7 @@ export const CreateRedPacket: React.FC = () => {
                           )}
                         </Box>
                       </FormControl>
-                      <Divider />
+                      <Divider/>
                       <FormControl py={2}>
                         <VStack align="stretch" spacing={3}>
                           <Box>
@@ -1524,7 +1524,7 @@ export const CreateRedPacket: React.FC = () => {
                               (Each line: address,amount)
                             </Text>
                           </Box>
-
+                          
                           <Textarea
                             value={whitelistText}
                             onChange={e => setWhitelistText(e.target.value)}
@@ -1533,7 +1533,7 @@ export const CreateRedPacket: React.FC = () => {
                             color="gray.800"
                             _placeholder={{ color: 'gray.500' }}
                           />
-
+                          
                           {whitelistText.trim() && (
                             <Box bg="blue.50" p={2} borderRadius="md" fontSize="xs">
                               <Text fontWeight="bold" color="blue.700" mb={1}>Live Preview:</Text>
@@ -1541,11 +1541,11 @@ export const CreateRedPacket: React.FC = () => {
                                 try {
                                   const leaves = parseWhitelistInput(whitelistText);
                                   const isSol = !tokenAddress || tokenAddress.trim() === '';
-
+                                  
                                   // Safely get decimals and symbol
                                   let decimals = 9;
                                   let symbolName = 'SOL';
-
+                                  
                                   if (isSol) {
                                     decimals = 9;
                                     symbolName = 'SOL';
@@ -1556,7 +1556,7 @@ export const CreateRedPacket: React.FC = () => {
                                     decimals = 9;
                                     symbolName = 'Token';
                                   }
-
+                                  
                                   return leaves.slice(0, 3).map((leaf, index) => (
                                     <Text key={index} color="blue.600">
                                       {leaf.claimer.slice(0, 8)}...{leaf.claimer.slice(-4)}: {(leaf.amount / Math.pow(10, decimals)).toFixed(Math.min(decimals, 9)).replace(/\.?0+$/, '')} {symbolName}
@@ -1580,7 +1580,7 @@ export const CreateRedPacket: React.FC = () => {
                           )}
                         </VStack>
                       </FormControl>
-                      <Divider />
+                      <Divider/>
                       <HStack py={2} align="center">
                         <FormLabel color="gray.800" minW="140px" mb={0}>Set expiry time:</FormLabel>
                         <Select
@@ -1601,10 +1601,10 @@ export const CreateRedPacket: React.FC = () => {
                           <option value="30d">1 Month</option>
                         </Select>
                       </HStack>
-                      <Divider />
+                      <Divider/>
                       <VStack spacing={3} py={2} align="stretch">
                         <Text color="gray.800" fontWeight="medium" mb={0}>Community links (optional):</Text>
-
+                        
                         <HStack>
                           <HStack color="gray.600" minW="100px" fontSize="sm">
                             <img src={TwitterLogo} alt="Twitter" width={14} height={14} />
@@ -1619,7 +1619,7 @@ export const CreateRedPacket: React.FC = () => {
                             flex={1}
                           />
                         </HStack>
-
+                        
                         <HStack>
                           <HStack color="gray.600" minW="100px" fontSize="sm" spacing={1}>
                             <img src={TelegramLogo} alt="Telegram" width={14} height={14} />
@@ -1634,7 +1634,7 @@ export const CreateRedPacket: React.FC = () => {
                             flex={1}
                           />
                         </HStack>
-
+                        
                         <HStack>
                           <HStack color="gray.600" minW="100px" fontSize="sm" spacing={1}>
                             <img src={DiscordLogo} alt="Discord" width={14} height={14} />
@@ -1656,7 +1656,7 @@ export const CreateRedPacket: React.FC = () => {
               </VStack>
             </Box>
             {/* Button area */}
-            <HStack mt={0} spacing={8} justify="center">
+            <HStack mt={6} spacing={8} justify="center">
               <Button
                 onClick={() => setCurrentStep(1)}
                 variant="outline"
@@ -1682,7 +1682,7 @@ export const CreateRedPacket: React.FC = () => {
           </VStack>
         )}
         {currentStep === 3 && (
-          <VStack spacing={4} align="center" w="100%" mt="20px">
+          <VStack spacing={6} align="center" w="100%" mt="40px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1690,12 +1690,12 @@ export const CreateRedPacket: React.FC = () => {
               {/* Top-left corner mode icon and text */}
               <Box position="absolute" top="-80px" left="-80px" zIndex={10}>
                 <Box position="relative" display="inline-block">
-                  {/* <Image
+                  <Image
                     src={'/redpacket-parachute.png'}
                     alt={mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
                     boxSize="160px"
                     objectFit="contain"
-                  /> */}
+                  />
                   <Box
                     position="absolute"
                     bottom="8px"
@@ -1715,10 +1715,10 @@ export const CreateRedPacket: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
-
+              
               <VStack spacing={4} align="stretch" color="gray.800">
                 <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={2}>Step 3: Review & Confirm</Text>
-
+                
                 <Box bg="gray.100" borderRadius="md" p={4} fontSize="md">
                   <VStack align="stretch" spacing={1}>
                     <HStack justify="space-between">
@@ -1749,10 +1749,11 @@ export const CreateRedPacket: React.FC = () => {
                           randomAmount ? 'Random' : (() => {
                             const countNum = parseInt(count) || 0;
                             const amountNum = parseFloat(amount) || 0;
-                            return countNum > 0 ? (amountNum / countNum).toFixed(3) + ` ${tokenAddress.trim()
-                              ? (tokenInfo?.symbol || tokenAddress.slice(0, 6) + '...')
-                              : 'SOL'
-                              }` : '-';
+                            return countNum > 0 ? (amountNum / countNum).toFixed(3) + ` ${
+                              tokenAddress.trim() 
+                                ? (tokenInfo?.symbol || tokenAddress.slice(0, 6) + '...')
+                                : 'SOL'
+                            }` : '-';
                           })()
                         }</Text>
                       </HStack>
@@ -1763,35 +1764,35 @@ export const CreateRedPacket: React.FC = () => {
                         mode === 'redpacket'
                           ? `${amount}`
                           : (() => {
-                            try {
-                              const leaves = parseWhitelistInput(whitelistText);
-                              if (leaves.length > 0) {
-                                const isSol = !tokenAddress || tokenAddress.trim() === '';
-                                let decimals = 9;
-
-                                if (isSol) {
-                                  decimals = 9;
-                                } else if (tokenInfo && typeof tokenInfo.decimals === 'number') {
-                                  decimals = tokenInfo.decimals;
-                                } else {
-                                  decimals = 9;
+                              try {
+                                const leaves = parseWhitelistInput(whitelistText);
+                                if (leaves.length > 0) {
+                                  const isSol = !tokenAddress || tokenAddress.trim() === '';
+                                  let decimals = 9;
+                                  
+                                  if (isSol) {
+                                    decimals = 9;
+                                  } else if (tokenInfo && typeof tokenInfo.decimals === 'number') {
+                                    decimals = tokenInfo.decimals;
+                                  } else {
+                                    decimals = 9;
+                                  }
+                                  
+                                  const totalSmallestUnits = leaves.reduce((sum, leaf) => sum + leaf.amount, 0);
+                                  const totalTokens = totalSmallestUnits / Math.pow(10, decimals);
+                                  return `${totalTokens.toFixed(Math.min(decimals, 9)).replace(/\.?0+$/, '')}`;
                                 }
-
-                                const totalSmallestUnits = leaves.reduce((sum, leaf) => sum + leaf.amount, 0);
-                                const totalTokens = totalSmallestUnits / Math.pow(10, decimals);
-                                return `${totalTokens.toFixed(Math.min(decimals, 9)).replace(/\.?0+$/, '')}`;
+                                return '-';
+                              } catch {
+                                return '-';
                               }
-                              return '-';
-                            } catch {
-                              return '-';
-                            }
-                          })()
+                            })()
                       }</Text>
                     </HStack>
                     <HStack justify="space-between">
                       <Text>Airdrop Type</Text>
                       <Text>{
-                        mode === 'redpacket'
+                        mode === 'redpacket' 
                           ? (randomAmount ? 'Random Red Packet' : 'Fixed Red Packet')
                           : 'Whitelist Airdrop'
                       }</Text>
@@ -1805,15 +1806,15 @@ export const CreateRedPacket: React.FC = () => {
                               <img src={TwitterLogo} alt="Twitter" width={12} height={12} />
                               <Text>Twitter:</Text>
                             </HStack>
-                            <Text
-                              color="blue.500"
+                            <Text 
+                              color="blue.500" 
                               fontSize="sm"
                               wordBreak="break-all"
                               maxW="200px"
                               title={twitterLink}
                             >
-                              {twitterLink.length > 25
-                                ? `${twitterLink.substring(0, 25)}...`
+                              {twitterLink.length > 25 
+                                ? `${twitterLink.substring(0, 25)}...` 
                                 : twitterLink
                               }
                             </Text>
@@ -1825,15 +1826,15 @@ export const CreateRedPacket: React.FC = () => {
                               <img src={TelegramLogo} alt="Telegram" width={12} height={12} />
                               <Text>Telegram:</Text>
                             </HStack>
-                            <Text
-                              color="blue.500"
+                            <Text 
+                              color="blue.500" 
                               fontSize="sm"
                               wordBreak="break-all"
                               maxW="200px"
                               title={telegramLink}
                             >
-                              {telegramLink.length > 25
-                                ? `${telegramLink.substring(0, 25)}...`
+                              {telegramLink.length > 25 
+                                ? `${telegramLink.substring(0, 25)}...` 
                                 : telegramLink
                               }
                             </Text>
@@ -1845,15 +1846,15 @@ export const CreateRedPacket: React.FC = () => {
                               <img src={DiscordLogo} alt="Discord" width={12} height={12} />
                               <Text>Discord:</Text>
                             </HStack>
-                            <Text
-                              color="blue.500"
+                            <Text 
+                              color="blue.500" 
                               fontSize="sm"
                               wordBreak="break-all"
                               maxW="200px"
                               title={discordLink}
                             >
-                              {discordLink.length > 25
-                                ? `${discordLink.substring(0, 25)}...`
+                              {discordLink.length > 25 
+                                ? `${discordLink.substring(0, 25)}...` 
                                 : discordLink
                               }
                             </Text>
@@ -1864,10 +1865,10 @@ export const CreateRedPacket: React.FC = () => {
                     {mode === 'whitelist' && merkleRoot && (
                       <HStack justify="space-between">
                         <Text>Merkle Root</Text>
-                        <Text
-                          fontFamily="mono"
-                          fontSize="xs"
-                          wordBreak="break-all"
+                        <Text 
+                          fontFamily="mono" 
+                          fontSize="xs" 
+                          wordBreak="break-all" 
                           maxW="200px"
                           title={merkleRoot}
                         >
@@ -1880,11 +1881,11 @@ export const CreateRedPacket: React.FC = () => {
                 <Text color="blue.500" fontSize="sm" mt={2} mb={-2}>
                   Estimate creation cost：<b>0.01 sol</b>
                 </Text>
-
+                
 
               </VStack>
             </Box>
-            <HStack mt={0} spacing={8} justify="center">
+            <HStack mt={6} spacing={8} justify="center">
               <Button
                 onClick={handleBackClick}
                 variant="outline"
@@ -1895,7 +1896,7 @@ export const CreateRedPacket: React.FC = () => {
                 _active={{ bg: creating ? 'red.100' : 'gray.200' }}
                 borderColor={creating ? "red.300" : "gray.300"}
               >{creating ? 'Cancel' : 'Back'}</Button>
-
+              
               <Button
                 colorScheme="blue"
                 minW="120px"
@@ -1945,7 +1946,7 @@ export const CreateRedPacket: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
-
+              
               <VStack spacing={4} align="center">
                 {/* Title */}
                 <VStack spacing={1} align="center">
@@ -1978,12 +1979,12 @@ export const CreateRedPacket: React.FC = () => {
               >
                 Home
               </Button>
-
+              
               <Button
                 onClick={() => navigate('/my-created-redpackets')}
                 bg="#4079FF"
                 color="white"
-                size="lg"
+                size="lg" 
                 minW="200px"
                 borderRadius="md"
                 border="none"

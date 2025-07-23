@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 
 
-export const RED_PACKET_PROGRAM_ID = new PublicKey('HNrivchW1kF64xufRHWxN41EXLm2Q1h2UkCkT4nX1uSE');
+export const RED_PACKET_PROGRAM_ID = new PublicKey('RedGJbeNejUtP6vMEPDkG55yRf7oAbkMFGeDjXaNfe1');
 
 export const LAUNCHPAD_MINT_PROGRAM_ID = new PublicKey('6jYBw1mAaH3aJrKEjoacBmNT43MqnTanDBUpiyMX4TN');
 

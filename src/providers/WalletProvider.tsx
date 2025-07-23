@@ -2,19 +2,18 @@ import React from 'react'
 import { createAppKit } from '@reown/appkit/react'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
 import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
+
 // 配置 Solana 适配器
 const solanaWeb3JsAdapter = new SolanaAdapter({})
 
 // 配置项目信息
-// const projectId = (import.meta as any).env?.VITE_PROJECT_ID|'your-project-id'; // 请在.env文件中配置VITE_PROJECT_ID=你的真实projectId
-const projectId = import.meta.env.VITE_PROJECT_ID || '32aa6337e9b58311c4287aa3c06065c4';
-console.log('项目ID:', import.meta.env, projectId)
+const projectId = (import.meta as any).env?.VITE_PROJECT_ID || 'your-project-id-here' // 请在.env文件中配置VITE_PROJECT_ID=你的真实projectId
 
 // 元数据
 const metadata = {
   name: 'AIDR',
   description: '基于Solana区块链的数字红包平台',
-  url: 'https://ton-taupe.vercel.app/',
+  url: 'https://your-app-url.com',
   icons: ['https://your-app-icon.com/icon.png']
 }
 
@@ -31,6 +30,10 @@ createAppKit({
     socials: false,
     emailShowWallets: false,
   },
+  enableWalletConnect: false,
+  enableInjected: false,
+  enableEIP6963: false,
+  enableCoinbase: false,
   themeMode: 'dark'
 })
 

@@ -47,7 +47,7 @@ export const Header: React.FC = () => {
     if (isTelegram) {
       onOpen()
     } else {
-      console.log("默认钱包连接方式")
+      console.log("默认钱包连接方式2222")
       open()
     }
   }

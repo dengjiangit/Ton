@@ -1125,7 +1125,7 @@ export const CreateRedPacket: React.FC = () => {
               </Box>
 
               <VStack spacing={4} align="stretch" color="gray.800">
-                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={2}>Step 1: deposit tokens into the AIDR contract</Text>
+                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={0} mt={2}>Step 1: deposit tokens into the AIDR contract</Text>
                 <FormControl>
                   <FormLabel color="gray.800" textAlign="center">Enter Your Token Contract</FormLabel>
                   <InputGroup>

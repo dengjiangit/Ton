@@ -205,7 +205,7 @@ export const ClaimLaunchpad: React.FC = () => {
     // 2. 从链上获取最新的projectId
     try {
       const creatorPubkey = new PublicKey(creatorAddress)
-      
+
       // 方法1: 尝试从0开始查找存在的项目
       for (let i = 0; i < 10; i++) { // 最多查找10个项目
         try {
@@ -219,14 +219,14 @@ export const ClaimLaunchpad: React.FC = () => {
           continue
         }
       }
-      
+
       // 方法2: 如果找不到，尝试获取创建者状态
       // 注意：这里需要实现getCreatorState方法
       console.warn('⚠️ 无法找到有效的项目，使用默认值0')
       const defaultProjectId = BigInt(0)
       setCurrentProjectId(defaultProjectId)
       return defaultProjectId
-      
+
     } catch (error) {
       console.error('❌ 获取projectId失败:', error)
       throw new Error('无法获取有效的项目ID')
@@ -270,10 +270,10 @@ export const ClaimLaunchpad: React.FC = () => {
       const creatorPubkey = new PublicKey(creatorAddress)
       const projectId = await getProjectId()
       const redPacketInfo = await crowdfundingContract.getRedPacketInfo(creatorPubkey, projectId)
-      
+
       const remainingGoal = redPacketInfo.fundingGoal - redPacketInfo.currentAmount
       console.log('剩余众筹目标:', remainingGoal / 1e9, 'SOL')
-      
+
       // 如果剩余目标 < 0.5 SOL，只允许小额支持
       if (remainingGoal < 500_000_000) {
         setAvailableOptions(['small', 'airdrop'])
@@ -296,7 +296,7 @@ export const ClaimLaunchpad: React.FC = () => {
     setLoadingIPFS(true)
     try {
       console.log('📥 从IPFS加载众筹数据:', ipfsCID)
-      
+
       const response = await fetch(`https://gateway.pinata.cloud/ipfs/${ipfsCID}`)
       if (!response.ok) {
         throw new Error(`IPFS请求失败: ${response.status}`)
@@ -304,9 +304,9 @@ export const ClaimLaunchpad: React.FC = () => {
 
       const data = await response.json()
       console.log('✅ IPFS众筹数据加载成功:', data)
-      
+
       setIpfsCrowdfundingData(data)
-      
+
       // 如果成功加载到IPFS数据，更新众筹信息
       if (data) {
         setCrowdfundingInfo({
@@ -351,9 +351,9 @@ export const ClaimLaunchpad: React.FC = () => {
       const creatorPubkey = new PublicKey(creatorAddress)
       const userPubkey = new PublicKey(address)
       const projectId = await getProjectId()
-      
+
       const userState = await crowdfundingContract.getUserState(creatorPubkey, projectId, userPubkey)
-      
+
       if (userState.exists) {
         setReferralInfo({
           referralCount: userState.referralCount || 0,
@@ -398,9 +398,9 @@ export const ClaimLaunchpad: React.FC = () => {
       // 获取用户状态（空投相关）
       const userState = await crowdfundingContract.getUserState(creatorPubkey, projectId, userPubkey)
       console.log('🔍 用户状态:', userState)
-      
+
       let totalClaimed = BigInt(0)
-      
+
       // 只有领取空投才显示代币金额
       if (userState.exists && userState.airdropClaimed) {
         console.log('🎯 用户已领取空投，开始计算金额...')
@@ -409,16 +409,16 @@ export const ClaimLaunchpad: React.FC = () => {
           const redPacketInfo = await crowdfundingContract.getRedPacketInfo(creatorPubkey, projectId)
           console.log('🔍 众筹红包信息:', redPacketInfo)
           console.log('🔍 分配方案:', redPacketInfo.allocations)
-          
+
           // 从分配方案中找到空投分配
           const airdropAllocation = redPacketInfo.allocations?.find((alloc: any) => alloc.name === 'airdrop')
           console.log('🔍 找到的空投分配:', airdropAllocation)
-          
+
           if (airdropAllocation) {
             // 使用合约中的实际空投分配金额
             const airdropAmount = BigInt(airdropAllocation.amount)
             const airdropMaxCount = BigInt(redPacketInfo.airdropMaxCount || 1000)
-            
+
             // 按照合约逻辑计算每用户空投金额
             const airdropPerUser = airdropAmount / airdropMaxCount
             totalClaimed += airdropPerUser
@@ -430,13 +430,13 @@ export const ClaimLaunchpad: React.FC = () => {
             // 尝试查找其他可能的分配名称
             const allAllocations = redPacketInfo.allocations || []
             console.log('所有分配方案:', allAllocations)
-            
+
             // 如果找不到 'airdrop'，尝试使用第一个分配或者查找包含 'airdrop' 的分配
-            const alternativeAirdrop = allAllocations.find((alloc: any) => 
-              alloc.name.toLowerCase().includes('airdrop') || 
+            const alternativeAirdrop = allAllocations.find((alloc: any) =>
+              alloc.name.toLowerCase().includes('airdrop') ||
               alloc.name.toLowerCase().includes('空投')
             )
-            
+
             if (alternativeAirdrop) {
               console.log('找到替代空投分配:', alternativeAirdrop)
               const airdropAmount = BigInt(alternativeAirdrop.amount)
@@ -455,14 +455,14 @@ export const ClaimLaunchpad: React.FC = () => {
         setLoadingClaimedAmount(false)
         return
       }
-      
+
       // 转换为可读格式
       const claimedInTokens = totalClaimed / BigInt(Math.pow(10, 9)) // 假设9位小数
       setClaimedAmount(claimedInTokens.toString())
-      
+
       // console.log('✅ 用户总共收到代币:', claimedInTokens.toString())
       // console.log('🔍 原始计算值:', totalClaimed.toString())
-      
+
       // 如果计算出的金额为0，可能是因为链上状态还没更新
       if (claimedInTokens === BigInt(0)) {
         console.log('⚠️ 计算出的金额为0，可能是链上状态还未更新')
@@ -472,7 +472,7 @@ export const ClaimLaunchpad: React.FC = () => {
         setLoadingClaimedAmount(false)
         console.log('✅ 成功获取到领取金额，停止重试并结束loading状态')
       }
-      
+
     } catch (error) {
       console.error('❌ 查询用户收到代币金额失败:', error)
       setClaimedAmount('0')
@@ -536,9 +536,9 @@ export const ClaimLaunchpad: React.FC = () => {
       await loadReferralInfo()
     } catch (error: any) {
       console.error('领取推荐人奖励失败:', error)
-      
+
       let errorMessage = '领取失败，请重试'
-      
+
       if (error.message?.includes('NoReferralRewardsToClaim')) {
         errorMessage = '没有可领取的推荐人奖励'
       } else if (error.message?.includes('CrowdfundingFailed')) {
@@ -546,7 +546,7 @@ export const ClaimLaunchpad: React.FC = () => {
       } else if (error.message?.includes('User rejected')) {
         errorMessage = '用户取消了交易'
       }
-      
+
       toast({
         title: '领取推荐人奖励失败',
         description: errorMessage,
@@ -583,13 +583,13 @@ export const ClaimLaunchpad: React.FC = () => {
     if (isSuccess && successType === 'airdrop') {
       console.log('🎉 空投领取成功状态触发，开始加载领取金额...')
       setRetryCount(0)
-      
+
       // 存储所有定时器的ID，以便在成功时清除
       const timers: NodeJS.Timeout[] = []
-      
+
       // 立即检查一次状态
       loadClaimedAmount()
-      
+
       // 延迟一点时间确保交易已经确认
       const timer1 = setTimeout(() => {
         console.log('⏰ 延迟1秒后开始加载领取金额 (重试1)')
@@ -597,7 +597,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 1000)
       timers.push(timer1)
-      
+
       // 如果第一次加载失败，3秒后再次尝试
       const timer2 = setTimeout(() => {
         console.log('⏰ 延迟3秒后再次尝试加载领取金额 (重试2)')
@@ -605,7 +605,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 3000)
       timers.push(timer2)
-      
+
       // 如果还是失败，5秒后再次尝试
       const timer3 = setTimeout(() => {
         console.log('⏰ 延迟5秒后再次尝试加载领取金额 (重试3)')
@@ -613,7 +613,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 5000)
       timers.push(timer3)
-      
+
       // 继续重试，10秒后再次尝试
       const timer4 = setTimeout(() => {
         console.log('⏰ 延迟10秒后再次尝试加载领取金额 (重试4)')
@@ -621,7 +621,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 10000)
       timers.push(timer4)
-      
+
       // 继续重试，15秒后再次尝试
       const timer5 = setTimeout(() => {
         console.log('⏰ 延迟15秒后再次尝试加载领取金额 (重试5)')
@@ -629,7 +629,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 15000)
       timers.push(timer5)
-      
+
       // 继续重试，20秒后再次尝试
       const timer6 = setTimeout(() => {
         console.log('⏰ 延迟20秒后再次尝试加载领取金额 (重试6)')
@@ -637,7 +637,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 20000)
       timers.push(timer6)
-      
+
       // 继续重试，30秒后再次尝试
       const timer7 = setTimeout(() => {
         console.log('⏰ 延迟30秒后再次尝试加载领取金额 (重试7)')
@@ -645,7 +645,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 30000)
       timers.push(timer7)
-      
+
       // 继续重试，45秒后再次尝试
       const timer8 = setTimeout(() => {
         console.log('⏰ 延迟45秒后再次尝试加载领取金额 (重试8)')
@@ -653,7 +653,7 @@ export const ClaimLaunchpad: React.FC = () => {
         loadClaimedAmount()
       }, 45000)
       timers.push(timer8)
-      
+
       // 设置超时保护，60秒后强制结束loading状态
       const timeoutTimer = setTimeout(() => {
         console.log('⏰ 60秒超时，强制结束loading状态')
@@ -664,7 +664,7 @@ export const ClaimLaunchpad: React.FC = () => {
         }
       }, 60000)
       timers.push(timeoutTimer)
-      
+
       // 监听claimedAmount的变化，如果获取到金额就清除所有定时器
       const checkSuccess = () => {
         if (claimedAmount && claimedAmount !== '0' && claimedAmount !== '') {
@@ -673,11 +673,11 @@ export const ClaimLaunchpad: React.FC = () => {
           setRetryCount(0)
         }
       }
-      
+
       // 设置一个监听器来检查claimedAmount的变化
       const successCheckTimer = setInterval(checkSuccess, 500)
       timers.push(successCheckTimer)
-      
+
       // 清理函数
       return () => {
         timers.forEach(timer => {
@@ -740,7 +740,7 @@ export const ClaimLaunchpad: React.FC = () => {
       if (option.isAirdropOnly) {
         // 仅空投逻辑 - 调用 claim_airdrop
         console.log('🎁 开始领取空投...')
-        
+
         // 检查用户是否已经领取过空投
         const userState = await crowdfundingContract.getUserState(creatorPubkey, projectId, wallet.publicKey)
         if (userState.exists && userState.airdropClaimed) {
@@ -763,13 +763,13 @@ export const ClaimLaunchpad: React.FC = () => {
         setTransactionSignature(signature)
         setSuccessType('airdrop')
         setIsSuccess(true)
-        
+
         // 查询用户收到的代币金额
         await loadClaimedAmount()
       } else {
         // 参与众筹逻辑 - 调用 participateInCrowdfunding
         console.log('💰 开始参与众筹...')
-        
+
         // 先验证众筹项目是否存在
         try {
           const redPacketInfo = await crowdfundingContract.getRedPacketInfo(creatorPubkey, projectId)
@@ -783,7 +783,7 @@ export const ClaimLaunchpad: React.FC = () => {
           })
           return
         }
-        
+
         // 检查用户是否已经参与过众筹
         const backerState = await crowdfundingContract.getBackerState(creatorPubkey, projectId, wallet.publicKey)
         if (backerState.exists && backerState.amount > 0) {
@@ -815,14 +815,14 @@ export const ClaimLaunchpad: React.FC = () => {
         console.log('参与金额 (lamports):', amountInLamports)
         console.log('参与金额 (SOL):', amountInLamports / 1e9)
         console.log('项目ID:', projectId.toString())
-        
+
         // 处理推荐人参数
         let referrerPubkey: PublicKey | undefined
         if (referrerAddress) {
           try {
             referrerPubkey = new PublicKey(referrerAddress)
             console.log('推荐人地址:', referrerPubkey.toBase58())
-            
+
             // 验证推荐人不能是自己
             if (referrerPubkey.equals(wallet.publicKey)) {
               console.log('⚠️ 推荐人不能是自己，忽略推荐人参数')
@@ -846,16 +846,16 @@ export const ClaimLaunchpad: React.FC = () => {
         setTransactionSignature(signature)
         setSuccessType('crowdfunding')
         setIsSuccess(true)
-        
+
         // 众筹参与成功后不查询代币金额，因为众筹不立即发放代币
         // await loadClaimedAmount()
       }
     } catch (error: any) {
       console.error('参与失败:', error)
-      
+
       // 根据错误类型提供更友好的错误信息
       let errorMessage = '参与失败，请重试'
-      
+
       if (error.message?.includes('InvalidSupportAmount')) {
         errorMessage = '参与金额无效，请选择正确的金额'
       } else if (error.message?.includes('InsufficientFunds')) {
@@ -867,7 +867,7 @@ export const ClaimLaunchpad: React.FC = () => {
       } else if (error.message?.includes('User rejected')) {
         errorMessage = '用户取消了交易'
       }
-      
+
       toast({
         title: '参与失败',
         description: errorMessage,
@@ -897,36 +897,36 @@ export const ClaimLaunchpad: React.FC = () => {
       // 获取空投记录 (type=0)
       const airdropUrl = buildApiUrl(`/api/one_launch/crowdfunding_program/investor/list/${LAUNCHPAD_CrowdFunding_PROGRAM_ID.toString()}/${address}/0?pageSize=10&pageNum=${page}`)
       console.log('🔍 获取空投记录:', airdropUrl)
-      
+
       const airdropResponse = await fetch(airdropUrl)
       const airdropData: MyClaimRecordsResponse = await airdropResponse.json()
-      
+
       // 获取众筹支持记录 (type=1)
       const supportUrl = buildApiUrl(`/api/one_launch/crowdfunding_program/investor/list/${LAUNCHPAD_CrowdFunding_PROGRAM_ID.toString()}/${address}/1?pageSize=10&pageNum=${page}`)
       console.log('🔍 获取众筹支持记录:', supportUrl)
-      
+
       const supportResponse = await fetch(supportUrl)
       const supportData: MyClaimRecordsResponse = await supportResponse.json()
-      
+
       // 合并记录并按时间排序
       const airdropRecords = airdropData.success && Array.isArray(airdropData.data) ? airdropData.data : []
       const supportRecords = supportData.success && Array.isArray(supportData.data) ? supportData.data : []
-      
+
       const allRecords = [
         ...airdropRecords,
         ...supportRecords
       ].sort((a, b) => b.timestamp - a.timestamp)
-      
+
       console.log('✅ 获取我的领取记录成功:', {
         airdropCount: airdropRecords.length,
         supportCount: supportRecords.length,
         totalRecords: allRecords.length
       })
-      
+
       setMyClaimRecords(allRecords)
       setMyClaimsTotal(Math.max(airdropData.total || 0, supportData.total || 0))
       setMyClaimsPage(page)
-      
+
     } catch (error) {
       console.error('❌ 获取我的领取记录失败:', error)
       toast({
@@ -1034,25 +1034,25 @@ export const ClaimLaunchpad: React.FC = () => {
                         You received
                       </Text>
                       <HStack spacing={2}>
-                      <Text fontSize="lg" color="green.600" fontWeight="bold">
-                        {loadingClaimedAmount ? (
-                          <HStack spacing={2}>
-                          <Spinner size="sm" />
-                            <VStack spacing={0} align="start">
-                              <Text fontSize="sm" color="gray.500">查询中...</Text>
-                              <Text fontSize="xs" color="gray.400">
-                                {retryCount > 0 ? `第${retryCount}次重试中` : '系统正在持续尝试获取最新数据'}
-                              </Text>
-                            </VStack>
-                          </HStack>
-                        ) : (
-                          claimedAmount === '查询超时，请手动刷新' ? (
-                            <Text color="orange.500" fontSize="sm">{claimedAmount}</Text>
-                        ) : (
-                          `${claimedAmount || '0'} ${ipfsCrowdfundingData?.tokenSymbol || ''}`
-                          )
-                        )}
-                      </Text>
+                        <Text fontSize="lg" color="green.600" fontWeight="bold">
+                          {loadingClaimedAmount ? (
+                            <HStack spacing={2}>
+                              <Spinner size="sm" />
+                              <VStack spacing={0} align="start">
+                                <Text fontSize="sm" color="gray.500">查询中...</Text>
+                                <Text fontSize="xs" color="gray.400">
+                                  {retryCount > 0 ? `第${retryCount}次重试中` : '系统正在持续尝试获取最新数据'}
+                                </Text>
+                              </VStack>
+                            </HStack>
+                          ) : (
+                            claimedAmount === '查询超时，请手动刷新' ? (
+                              <Text color="orange.500" fontSize="sm">{claimedAmount}</Text>
+                            ) : (
+                              `${claimedAmount || '0'} ${ipfsCrowdfundingData?.tokenSymbol || ''}`
+                            )
+                          )}
+                        </Text>
                         {!loadingClaimedAmount && (
                           <Button
                             size="xs"
@@ -1079,17 +1079,17 @@ export const ClaimLaunchpad: React.FC = () => {
                         )}
                       </HStack>
                     </HStack>
-                    
+
                     {/* 交易哈希 */}
                     <HStack justify="space-between" w="full">
                       <Text fontSize="sm" color="gray.700" fontWeight="medium">
                         Hash
                       </Text>
                       <HStack spacing={2}>
-                        <Text 
-                          fontSize="sm" 
-                          color="blue.600" 
-                          fontFamily="mono" 
+                        <Text
+                          fontSize="sm"
+                          color="blue.600"
+                          fontFamily="mono"
                           textDecoration="underline"
                           cursor="pointer"
                           onClick={() => {
@@ -1098,8 +1098,8 @@ export const ClaimLaunchpad: React.FC = () => {
                             }
                           }}
                         >
-                          {transactionSignature ? 
-                            `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` : 
+                          {transactionSignature ?
+                            `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` :
                             'Pending...'
                           }
                         </Text>
@@ -1143,17 +1143,17 @@ export const ClaimLaunchpad: React.FC = () => {
                         </Text>
                       </HStack>
                     </HStack>
-                    
+
                     {/* 交易哈希 */}
                     <HStack justify="space-between" w="full">
                       <Text fontSize="sm" color="gray.700" fontWeight="medium">
                         Hash
                       </Text>
                       <HStack spacing={2}>
-                        <Text 
-                          fontSize="sm" 
-                          color="blue.600" 
-                          fontFamily="mono" 
+                        <Text
+                          fontSize="sm"
+                          color="blue.600"
+                          fontFamily="mono"
                           textDecoration="underline"
                           cursor="pointer"
                           onClick={() => {
@@ -1162,8 +1162,8 @@ export const ClaimLaunchpad: React.FC = () => {
                             }
                           }}
                         >
-                          {transactionSignature ? 
-                            `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` : 
+                          {transactionSignature ?
+                            `${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}` :
                             'Pending...'
                           }
                         </Text>
@@ -1197,7 +1197,7 @@ export const ClaimLaunchpad: React.FC = () => {
                 <Text fontSize="lg" fontWeight="bold" color="#4079FF" textShadow="0 2px 4px rgba(0,0,0,0.2)">
                   Join the Community:
                 </Text>
-                
+
                 <HStack spacing={4}>
                   {/* Twitter */}
                   <Box
@@ -1217,10 +1217,10 @@ export const ClaimLaunchpad: React.FC = () => {
                     cursor="pointer"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                      <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                     </svg>
                   </Box>
-                  
+
                   {/* Telegram */}
                   <Box
                     as="a"
@@ -1239,10 +1239,10 @@ export const ClaimLaunchpad: React.FC = () => {
                     cursor="pointer"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
                     </svg>
                   </Box>
-                  
+
                   {/* Discord */}
                   <Box
                     as="a"
@@ -1261,11 +1261,11 @@ export const ClaimLaunchpad: React.FC = () => {
                     cursor="pointer"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0002 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9554 2.4189-2.1568 2.4189Z"/>
+                      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0002 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9554 2.4189-2.1568 2.4189Z" />
                     </svg>
                   </Box>
                 </HStack>
-                
+
                 <Text fontSize="lg" color="#4079FF" textAlign="center">
                   (This community link was provided by the creator)
                 </Text>
@@ -1288,20 +1288,20 @@ export const ClaimLaunchpad: React.FC = () => {
               <VStack spacing={4}>
                 {/* 分享标题 */}
                 <Text fontSize="xl" fontWeight="bold" color="black" textAlign="center">
-                  {successType === 'airdrop' 
-                    ? 'Share your personal airdrop Claim Link!' 
+                  {successType === 'airdrop'
+                    ? 'Share your personal airdrop Claim Link!'
                     : 'Share your personal crowdfunding support link!'
                   }
                 </Text>
 
                 {/* 使用ShareComponent替换原有的分享内容 */}
-                <ShareComponent 
-                  shareUrl={`${window.location.origin}/claim-launchpad?creator=${creatorAddress}&mint=${mintAddress}${currentProjectId !== null ? `&projectId=${currentProjectId}` : ''}${ipfsCID ? `&ipfsCID=${ipfsCID}` : ''}${isSuccess && address ? `&referrer=${address}` : ''}`} 
+                <ShareComponent
+                  shareUrl={`${window.location.origin}/claim-launchpad?creator=${creatorAddress}&mint=${mintAddress}${currentProjectId !== null ? `&projectId=${currentProjectId}` : ''}${ipfsCID ? `&ipfsCID=${ipfsCID}` : ''}${isSuccess && address ? `&referrer=${address}` : ''}`}
                 />
 
                 {/* 说明文字 */}
                 <Text fontSize="sm" color="gray.500" textAlign="center" px={4}>
-                  {successType === 'airdrop' 
+                  {successType === 'airdrop'
                     ? 'For every 10 people you invite, you\'ll get an extra airdrop after the crowdfunding is successfully completed.'
                     : 'Invite friends to support this project and earn referral rewards!'
                   }
@@ -1327,7 +1327,7 @@ export const ClaimLaunchpad: React.FC = () => {
             >
               Home
             </Button>
-            
+
             <Button
               bg="#4079FF"
               color="white"
@@ -1354,134 +1354,134 @@ export const ClaimLaunchpad: React.FC = () => {
   return (
     <>
       {/* 主页面内容 */}
-    <Box
-      minH="100vh"
-      bg="gray.100"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      p={4}
-    >
       <Box
-        bg="white"
-        borderRadius="xl"
-        boxShadow="lg"
-        p={8}
-        w="full"
-        maxW="600px"
+        minH="100vh"
+        bg="gray.100"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        p={4}
       >
-        <VStack spacing={6}>
-          {/* 标题 */}
-          <Text fontSize="2xl" fontWeight="bold" color="blue.500" textAlign="center">
-            Choose crowdfunding amount
-          </Text>
+        <Box
+          bg="white"
+          borderRadius="xl"
+          boxShadow="lg"
+          p={8}
+          w="full"
+          maxW="600px"
+        >
+          <VStack spacing={6}>
+            {/* 标题 */}
+            <Text fontSize="2xl" fontWeight="bold" color="blue.500" textAlign="center">
+              Choose crowdfunding amount
+            </Text>
 
-          {/* 主要内容区域 */}
-          <SimpleGrid columns={2} spacing={8} w="full">
-            {/* Option One */}
-            <VStack spacing={4} align="stretch">
-              <Text fontSize="lg" fontWeight="semibold" color="gray.700" textAlign="center">
-                Option One
-              </Text>
-              <Text fontSize="sm" color="gray.600" textAlign="center" px={2}>
-                Token rewards depend on your chosen tier, plus a one-time airdrop
-              </Text>
-              
-              <VStack spacing={3}>
+            {/* 主要内容区域 */}
+            <SimpleGrid columns={2} spacing={8} w="full">
+              {/* Option One */}
+              <VStack spacing={4} align="stretch">
+                <Text fontSize="lg" fontWeight="semibold" color="gray.700" textAlign="center">
+                  Option One
+                </Text>
+                <Text fontSize="sm" color="gray.600" textAlign="center" px={2}>
+                  Token rewards depend on your chosen tier, plus a one-time airdrop
+                </Text>
+
+                <VStack spacing={3}>
+                  <Button
+                    bg="#2063FF"
+                    color="white"
+                    size="lg"
+                    w="full"
+                    isDisabled={!availableOptions.includes('large')}
+                    isLoading={loading}
+                    onClick={() => handleParticipate(crowdfundingOptions[1])}
+                    borderRadius="lg"
+                    py={6}
+                    _hover={{ bg: '#2063FF' }}
+                    _active={{ bg: '#2063FF' }}
+                    _focus={{ bg: '#2063FF' }}
+                  >
+                    Commit 0.5 SOL
+                  </Button>
+
+                  <Button
+                    bg="#6F9AFF"
+                    color="white"
+                    size="lg"
+                    w="full"
+                    isDisabled={!availableOptions.includes('small')}
+                    isLoading={loading}
+                    onClick={() => handleParticipate(crowdfundingOptions[0])}
+                    borderRadius="lg"
+                    py={6}
+                    _hover={{ bg: '#6F9AFF' }}
+                    _active={{ bg: '#6F9AFF' }}
+                    _focus={{ bg: '#6F9AFF' }}
+                  >
+                    Commit 0.05 SOL
+                  </Button>
+                </VStack>
+              </VStack>
+
+              {/* Option Two */}
+              <VStack spacing={4} align="stretch">
+                <Text fontSize="lg" fontWeight="semibold" color="gray.700" textAlign="center">
+                  Option Two
+                </Text>
+                <Text fontSize="sm" color="gray.600" textAlign="center" px={2}>
+                  No commitment needed
+                </Text>
+
                 <Button
-                  bg="#2063FF"
+                  bg="gray.400"
                   color="white"
                   size="lg"
                   w="full"
-                  isDisabled={!availableOptions.includes('large')}
+                  _hover={{ bg: 'gray.500' }}
                   isLoading={loading}
-                  onClick={() => handleParticipate(crowdfundingOptions[1])}
+                  onClick={() => handleParticipate(crowdfundingOptions[2])}
                   borderRadius="lg"
                   py={6}
-                  _hover={{ bg: '#2063FF' }}
-                  _active={{ bg: '#2063FF' }}
-                  _focus={{ bg: '#2063FF' }}
+                  mt={12}
                 >
-                  Commit 0.5 SOL
-                </Button>
-                
-                <Button
-                  bg="#6F9AFF"
-                  color="white"
-                  size="lg"
-                  w="full"
-                  isDisabled={!availableOptions.includes('small')}
-                  isLoading={loading}
-                  onClick={() => handleParticipate(crowdfundingOptions[0])}
-                  borderRadius="lg"
-                  py={6}
-                  _hover={{ bg: '#6F9AFF' }}
-                  _active={{ bg: '#6F9AFF' }}
-                  _focus={{ bg: '#6F9AFF' }}
-                >
-                  Commit 0.05 SOL
+                  Airdrop only
                 </Button>
               </VStack>
-            </VStack>
+            </SimpleGrid>
 
-            {/* Option Two */}
-            <VStack spacing={4} align="stretch">
-              <Text fontSize="lg" fontWeight="semibold" color="gray.700" textAlign="center">
-                Option Two
+            {/* 底部信息 */}
+            <VStack spacing={3} w="full">
+              <Text fontSize="xs" color="gray.500" textAlign="center">
+                Once the{' '}
+                <Link color="blue.500" textDecoration="underline">
+                  [Cumulative airdrop claims: 480 / 500]
+                </Link>
+                {' '}hit the limit, no more can be claimed. Only the crowdfunding will remain open.
               </Text>
-              <Text fontSize="sm" color="gray.600" textAlign="center" px={2}>
-                No commitment needed
-              </Text>
-              
-              <Button
-                bg="gray.400"
-                color="white"
-                size="lg"
-                w="full"
-                _hover={{ bg: 'gray.500' }}
-                isLoading={loading}
-                onClick={() => handleParticipate(crowdfundingOptions[2])}
-                borderRadius="lg"
-                py={6}
-                mt={12}
-              >
-                Airdrop only
-              </Button>
-            </VStack>
-          </SimpleGrid>
 
-          {/* 底部信息 */}
-          <VStack spacing={3} w="full">
-            <Text fontSize="xs" color="gray.500" textAlign="center">
-              Once the{' '}
-              <Link color="blue.500" textDecoration="underline">
-                [Cumulative airdrop claims: 480 / 500]
-              </Link>
-              {' '}hit the limit, no more can be claimed. Only the crowdfunding will remain open.
-            </Text>
-            
-            <HStack spacing={2} justify="center">
-              <Checkbox 
-                isChecked={agreed} 
-                onChange={e => setAgreed(e.target.checked)} 
-                colorScheme="blue"
-                size="sm"
-              />
-              <Text fontSize="xs" color="gray.500">
-                I've already gone through the{' '}
-                <Link color="blue.500" textDecoration="underline">
-                  project information
-                </Link>
-                {' '}and the{' '}
-                <Link color="blue.500" textDecoration="underline">
-                  OneLaunch protocol
-                </Link>
-              </Text>
-            </HStack>
+              <HStack spacing={2} justify="center">
+                <Checkbox
+                  isChecked={agreed}
+                  onChange={e => setAgreed(e.target.checked)}
+                  colorScheme="blue"
+                  size="sm"
+                />
+                <Text fontSize="xs" color="gray.500">
+                  I've already gone through the{' '}
+                  <Link color="blue.500" textDecoration="underline">
+                    project information
+                  </Link>
+                  {' '}and the{' '}
+                  <Link color="blue.500" textDecoration="underline">
+                    OneLaunch protocol
+                  </Link>
+                </Text>
+              </HStack>
+            </VStack>
           </VStack>
-        </VStack>
+        </Box>
       </Box>
-    </Box>
 
       {/* 我的领取记录弹窗 */}
       <Modal isOpen={showMyClaims} onClose={() => setShowMyClaims(false)} size="6xl">
@@ -1511,7 +1511,7 @@ export const ClaimLaunchpad: React.FC = () => {
                 <Text fontSize="sm" color="gray.600">
                   Found {myClaimsTotal} records
                 </Text>
-                
+
                 <Box
                   bg="white"
                   borderRadius="xl"
@@ -1570,7 +1570,7 @@ export const ClaimLaunchpad: React.FC = () => {
                                 </VStack>
                               </HStack>
                             </Td>
-                            
+
                             {/* Type column */}
                             <Td py={6}>
                               <Badge
@@ -1587,21 +1587,21 @@ export const ClaimLaunchpad: React.FC = () => {
                                 {getTypeText(record.type)}
                               </Badge>
                             </Td>
-                            
+
                             {/* Amount column */}
                             <Td py={6}>
                               <Text color="gray.800" fontSize="md" fontWeight="medium">
                                 {formatAmount(record.amount, record.type)}
                               </Text>
                             </Td>
-                            
+
                             {/* Date Claimed column */}
                             <Td py={6}>
                               <Text color="gray.600" fontSize="sm">
                                 {formatTime(record.timestamp)}
                               </Text>
                             </Td>
-                            
+
                             {/* Action column */}
                             <Td py={6}>
                               <Button
@@ -1631,7 +1631,7 @@ export const ClaimLaunchpad: React.FC = () => {
                     </Table>
                   </TableContainer>
                 </Box>
-                
+
                 {/* 分页控制 */}
                 {myClaimsTotal > 10 && (
                   <Flex justify="center" align="center" pt={6}>
@@ -1680,4 +1680,3 @@ export const ClaimLaunchpad: React.FC = () => {
   )
 }
 
- 

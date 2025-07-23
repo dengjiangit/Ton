@@ -45,9 +45,9 @@ export const Header: React.FC = () => {
     setIsTg(isTelegram)
 
     if (isTelegram) {
-      alert('请在 Telegram 中打开此链接');
       onOpen()
     } else {
+      console.log("默认钱包连接方式")
       open()
     }
   }

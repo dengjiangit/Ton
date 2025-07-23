@@ -31,8 +31,8 @@ createAppKit({
     emailShowWallets: false,
   },
   enableWalletConnect: false,
-  enableInjected: false,
-  enableEIP6963: false,
+  enableInjected: true,
+  enableEIP6963: true,
   enableCoinbase: false,
   themeMode: 'dark'
 })

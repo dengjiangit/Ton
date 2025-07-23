@@ -1088,9 +1088,9 @@ export const CreateRedPacket: React.FC = () => {
       {/* Header navigation is now handled uniformly by Header component */}
 
       {/* Content area */}
-      <Box minH="100vh" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="80px">
+      <Box minH="100vh" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="40px">
         {currentStep === 1 && (
-          <VStack spacing={6} align="center" w="100%" mt="40px">
+          <VStack spacing={4} align="center" w="100%" mt="20px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1261,7 +1261,7 @@ export const CreateRedPacket: React.FC = () => {
               </VStack>
             </Box>
             {/* Button area */}
-            <HStack mt={6} spacing={8} justify="center">
+            <HStack mt={0} spacing={8} justify="center">
               <Button
                 onClick={() => navigate('/')}
                 variant="outline"
@@ -1287,7 +1287,7 @@ export const CreateRedPacket: React.FC = () => {
           </VStack>
         )}
         {currentStep === 2 && (
-          <VStack spacing={6} align="center" w="100%" mt="40px">
+          <VStack spacing={4} align="center" w="100%" mt="40px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1323,15 +1323,15 @@ export const CreateRedPacket: React.FC = () => {
               </Box>
 
               <VStack spacing={0} align="stretch" color="gray.800">
-                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={2}>
+                <Text fontWeight="bold" fontSize="md" textAlign="center" mb={2} mt={0}>
                   Step 2: Set {mode === 'redpacket' ? 'Red Packet' : 'Whitelist Airdrop'} Parameters
                 </Text>
-                <Divider mb={2} />
+                <Divider mb={0} />
                 {/* Form content with dividers to simulate table */}
                 <Box as="form">
                   {mode === "redpacket" && (
-                    <VStack spacing={0} align="stretch">
-                      <HStack py={2}>
+                    <VStack spacing={2} align="stretch">
+                      <HStack py={0}>
                         <FormLabel color="gray.800" minW="140px" mb={0}>Total airdrop amount:</FormLabel>
                         <Input
                           type="number"
@@ -1353,7 +1353,7 @@ export const CreateRedPacket: React.FC = () => {
                         />
                       </HStack>
                       <Divider />
-                      <HStack py={2}>
+                      <HStack py={0}>
                         <FormLabel color="gray.800" minW="140px" mb={0}>Number of recipients:</FormLabel>
                         <Input
                           type="number"
@@ -1375,10 +1375,10 @@ export const CreateRedPacket: React.FC = () => {
                         />
                       </HStack>
                       <Divider />
-                      <HStack py={2} align="center">
+                      <HStack py={0} align="center">
                         <FormLabel color="gray.800" minW="140px" mb={0}>Amount type:</FormLabel>
                         <HStack spacing={4} flex={1}>
-                          <HStack spacing={2}>
+                          <HStack spacing={0}>
                             <input
                               type="radio"
                               name="amountType"
@@ -1388,7 +1388,7 @@ export const CreateRedPacket: React.FC = () => {
                             />
                             <Text color="gray.800">Random</Text>
                           </HStack>
-                          <HStack spacing={2}>
+                          <HStack spacing={0}>
                             <input
                               type="radio"
                               name="amountType"
@@ -1401,7 +1401,7 @@ export const CreateRedPacket: React.FC = () => {
                         </HStack>
                       </HStack>
                       <Divider />
-                      <HStack py={2} align="center">
+                      <HStack py={0} align="center">
                         <FormLabel color="gray.800" minW="140px" mb={0}>Set expiry time:</FormLabel>
                         <Select
                           value={expiry}
@@ -1422,7 +1422,7 @@ export const CreateRedPacket: React.FC = () => {
                         </Select>
                       </HStack>
                       <Divider />
-                      <VStack spacing={3} py={2} align="stretch">
+                      <VStack spacing={2} py={1} align="stretch">
                         <Text color="gray.800" fontWeight="medium" mb={0}>Community links (optional):</Text>
 
                         <HStack>
@@ -1441,7 +1441,7 @@ export const CreateRedPacket: React.FC = () => {
                         </HStack>
 
                         <HStack>
-                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={1}>
+                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={0}>
                             <img src={TelegramLogo} alt="Telegram" width={14} height={14} />
                             <Text>Telegram:</Text>
                           </HStack>
@@ -1456,7 +1456,7 @@ export const CreateRedPacket: React.FC = () => {
                         </HStack>
 
                         <HStack>
-                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={1}>
+                          <HStack color="gray.600" minW="100px" fontSize="sm" spacing={0}>
                             <img src={DiscordLogo} alt="Discord" width={14} height={14} />
                             <Text>Discord:</Text>
                           </HStack>
@@ -1656,7 +1656,7 @@ export const CreateRedPacket: React.FC = () => {
               </VStack>
             </Box>
             {/* Button area */}
-            <HStack mt={6} spacing={8} justify="center">
+            <HStack mt={0} spacing={8} justify="center">
               <Button
                 onClick={() => setCurrentStep(1)}
                 variant="outline"
@@ -1682,7 +1682,7 @@ export const CreateRedPacket: React.FC = () => {
           </VStack>
         )}
         {currentStep === 3 && (
-          <VStack spacing={6} align="center" w="100%" mt="40px">
+          <VStack spacing={4} align="center" w="100%" mt="20px">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>
@@ -1884,7 +1884,7 @@ export const CreateRedPacket: React.FC = () => {
 
               </VStack>
             </Box>
-            <HStack mt={6} spacing={8} justify="center">
+            <HStack mt={0} spacing={8} justify="center">
               <Button
                 onClick={handleBackClick}
                 variant="outline"

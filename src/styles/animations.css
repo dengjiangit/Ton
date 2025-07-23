@@ -41,3 +41,10 @@
 .parachute-animation {
   animation: parachute 6s ease-in-out infinite;
 } 
+/* 隐藏 Reown 品牌标识 */
+.w3m-bottom-sheet-scroll-view [class*="brand"],
+.w3m-modal-content [class*="brand"],
+.w3m-bottom-sheet-scroll-view [class*="reown"],
+.w3m-modal-content [class*="reown"] {
+  display: none !important;
+}

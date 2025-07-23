@@ -46,5 +46,23 @@ interface Props {
 }
 
 export const AppWalletProvider: React.FC<Props> = ({ children }) => {
-  return <>{children}</>
+  return <>
+    <style>
+      {`
+          .w3m-bottom-sheet-scroll-view div[class*="brand"] {
+            display: none !important;
+          }
+          .w3m-bottom-sheet-scroll-view div[class*="reown"] {
+            display: none !important;
+          }
+          .w3m-modal-content div[class*="brand"] {
+            display: none !important;
+          }
+          .w3m-modal-content div[class*="reown"] {
+            display: none !important;
+          }
+        `}
+    </style>
+    {children}
+  </>
 } 

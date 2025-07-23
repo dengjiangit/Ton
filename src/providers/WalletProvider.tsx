@@ -1,13 +1,13 @@
 import React from 'react'
 import { createAppKit } from '@reown/appkit/react'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
-import { solana, solanaTestnet, solanaDevnet, mainnet, arbitrum, scroll, morph, berachainTestnetbArtio, mantle, soneium, zircuit, rootstock, abstract, viction, monadTestnet, celo, apeChain, base } from '@reown/appkit/networks'
-
+import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
 // 配置 Solana 适配器
 const solanaWeb3JsAdapter = new SolanaAdapter({})
 
 // 配置项目信息
-const projectId = (import.meta as any).env?.VITE_PROJECT_ID || '32aa6337e9b58311c4287aa3c06065c4' // 请在.env文件中配置VITE_PROJECT_ID=你的真实projectId
+// const projectId = (import.meta as any).env?.VITE_PROJECT_ID|'your-project-id'; // 请在.env文件中配置VITE_PROJECT_ID=你的真实projectId
+const projectId = import.meta.env.VITE_PROJECT_ID;
 console.log('项目ID:', projectId)
 // 元数据
 const metadata = {
@@ -21,7 +21,7 @@ const metadata = {
 createAppKit({
   adapters: [solanaWeb3JsAdapter],
   projectId,
-  networks: [solanaTestnet, solanaDevnet, solana, mainnet, arbitrum, scroll, morph, berachainTestnetbArtio, mantle, soneium, zircuit, rootstock, abstract, viction, monadTestnet, celo, apeChain, base],
+  networks: [solanaTestnet, solanaDevnet, solana],
   defaultNetwork: solanaDevnet,
   metadata,
   features: {

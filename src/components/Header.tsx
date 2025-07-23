@@ -41,15 +41,15 @@ export const Header: React.FC = () => {
     await disconnect()
   }
   const handleConnectClick = () => {
-    const isTelegram = isTelegramWebView()
-    setIsTg(isTelegram)
+    // const isTelegram = isTelegramWebView()
+    // setIsTg(isTelegram)
 
-    if (isTelegram) {
-      onOpen()
-    } else {
-      console.log("默认钱包连接方式2222")
-      open()
-    }
+    // if (isTelegram) {
+    //   onOpen()
+    // } else {
+    console.log("默认钱包连接方式2222")
+    open()
+    // }
   }
   const handleCopyLink = () => {
     const connectors = open({ view: 'Qrcode' }) as any

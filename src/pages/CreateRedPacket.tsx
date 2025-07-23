@@ -233,7 +233,7 @@ export const CreateRedPacket: React.FC = () => {
   const [count, setCount] = useState('')
   const [message, setMessage] = useState('Congratulations, good luck!')
   const [shareLink, setShareLink] = useState('')
-  const [currentStep, setCurrentStep] = useState(4)
+  const [currentStep, setCurrentStep] = useState(1)
   const [balance, setBalance] = useState(0)
   const [mode, setMode] = useState<'redpacket' | 'whitelist'>(getInitialMode())
   const [whitelistText, setWhitelistText] = useState('')
@@ -1084,7 +1084,7 @@ export const CreateRedPacket: React.FC = () => {
   }
 
   return (
-    <Box minH="100vh" bg="linear-gradient(180deg, #fff 0%, #e9e9e9 100%)">
+    <Box minH="100vh" bg="linear-gradient(180deg, #fff 0%, #e9e9e9 100%)" css={{ overflowX: 'hidden' }}>
       {/* Header navigation is now handled uniformly by Header component */}
 
       {/* Content area */}

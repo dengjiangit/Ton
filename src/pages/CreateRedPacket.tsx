@@ -1090,7 +1090,7 @@ export const CreateRedPacket: React.FC = () => {
       {/* Content area */}
       <Box minH="calc(100vh-72px)" display="flex" flexDirection="column" alignItems="center" justifyContent="center" pt="72px">
         {currentStep === 1 && (
-          <VStack spacing={2} align="center" w="100%" mt="20px">
+          <VStack spacing={2} align="center" w="100%">
             <Text fontSize="3xl" fontWeight="bold" color="gray.900" textAlign="center" w="100%">
               Create New {mode === 'redpacket' ? 'Red Packet' : 'Airdrop'}
             </Text>

@@ -96,7 +96,7 @@ export const Header: React.FC = () => {
                   zIndex: 1
                 }}
               >
-                {/* <MenuItem
+                <MenuItem
                   onClick={() => navigate('/my-created-redpackets')}
                   bg="transparent"
                   color="white"
@@ -120,7 +120,7 @@ export const Header: React.FC = () => {
                   position="relative"
                 >
                   🎁 My Red Packets
-                </MenuItem> */}
+                </MenuItem>
                 <MenuItem
                   onClick={() => navigate('/my-created-crowdfunding')}
                   bg="transparent"
@@ -171,7 +171,7 @@ export const Header: React.FC = () => {
                 >
                   💎 My Claim
                 </MenuItem>
-                {/* <MenuItem
+                <MenuItem
                   onClick={() => navigate('/my-claimed-crowdfunding')}
                   bg="transparent"
                   color="white"
@@ -195,7 +195,7 @@ export const Header: React.FC = () => {
                   position="relative"
                 >
                   🚀 My Crowdfunding Records
-                </MenuItem> */}
+                </MenuItem>
                 <Box
                   height="1px"
                   bgGradient="linear(to-r, transparent, rgba(0, 255, 255, 0.5), transparent)"

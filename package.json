@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:dev": "cross-env REACT_APP_NETWORK=devnet vite build",
+    "build:main": "cross-env REACT_APP_NETWORK=mainnet vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -38,6 +40,7 @@
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
+    "cross-env": "^7.0.3",
     "typescript": "^5.6.2",
     "vite": "^4.5.0"
   }

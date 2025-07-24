@@ -8,7 +8,7 @@ export const LAUNCHPAD_MINT_PROGRAM_ID = new PublicKey('6jYBw1mAaH3aJrKEjoacBmNT
 export const LAUNCHPAD_CrowdFunding_PROGRAM_ID = new PublicKey('CfwHJ1YNiR9BjwLYqdYosYHUbdpSxnniUWYPNEUBGjpU');
 
 // 网络配置
-export const RPC_ENDPOINT = 'https://devnet.helius-rpc.com/?api-key=a08565ed-9671-4cb4-8568-a014f810bfb2'
+export const RPC_ENDPOINT = 'https://mainnet.helius-rpc.com/?api-key=a08565ed-9671-4cb4-8568-a014f810bfb2'
 
 
 // 程序ID - 最新部署的红包合约地址Devnet
@@ -43,7 +43,7 @@ export const DEFAULT_TIMEOUT = 30000
 
 // 种子字符串
 export const RED_PACKET_SEED = 'red_packet'
-export const USER_STATE_SEED = 'user_state' 
+export const USER_STATE_SEED = 'user_state'
 export const CREATOR_STATE_SEED = 'creator_state'
 
 // SOL相关常量

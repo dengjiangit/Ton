@@ -1,7 +1,7 @@
 import { Connection, clusterApiUrl } from '@solana/web3.js';
 
 // 网络配置
-export const NETWORK = 'mainnet'; //主网
+export const NETWORK = 'mainnet-beta'; //主网
 // export const MAINNET = 'mainnet' // 主网
 export const RPC_ENDPOINT = clusterApiUrl(NETWORK)
 

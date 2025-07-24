@@ -60,6 +60,7 @@ export const API_BASE_URL = (() => {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
     return `${protocol}//${hostname}:44321`;//线上测试网 44321端口
+
   }
 })();
 
@@ -72,5 +73,5 @@ export const buildApiUrl = (path: string): string => {
   }
   // 本地环境使用完整URL
   const apiPath = path.startsWith('/') ? path : `/${path}`;
-  return `${baseUrl}${apiPath}`;
+  return `https://www.aidr.plus/${apiPath}`;
 };

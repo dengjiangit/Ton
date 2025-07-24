@@ -73,5 +73,5 @@ export const buildApiUrl = (path: string): string => {
   }
   // 本地环境使用完整URL
   const apiPath = path.startsWith('/') ? path : `/${path}`;
-  return `https://www.aidr.plus/${apiPath}`;
+  return `https://www.aidr.plus${apiPath}`;
 };

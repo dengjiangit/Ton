@@ -1,10 +1,10 @@
 import { Connection, clusterApiUrl } from '@solana/web3.js';
 
 // 网络配置
-export const NETWORK = process.env.REACT_APP_NETWORK || 'devnet'; // 测试网络
+export const NETWORK = (import.meta as any).env?.VITE_RPC_NETWORK || 'devnet'; // 测试网络
 // export const MAINNET = 'mainnet' // 主网
 export const RPC_ENDPOINT = clusterApiUrl(NETWORK)
-console.log("RPC--------------------", RPC_ENDPOINT);
+
 // 程序ID已移至 config/constants.ts 文件中统一管理
 
 // 其他配置

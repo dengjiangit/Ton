@@ -14,11 +14,11 @@ import {
   Divider,
 } from '@chakra-ui/react'
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js'
 import { useNavigate } from 'react-router-dom'
 import { ArrowBackIcon } from '@chakra-ui/icons'
 import { formatAddress, formatSOL } from '../utils'
-import { RPC_ENDPOINT } from '../config/constants'
+import { RPC_ENDPOINT } from '../config/solana'
 
 export const WalletTest: React.FC = () => {
   const navigate = useNavigate()
@@ -26,6 +26,10 @@ export const WalletTest: React.FC = () => {
   const { address, isConnected } = useAppKitAccount()
   const [balance, setBalance] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const RPC_NETWORK = (import.meta as any).env?.VITE_RPC_NETWORK || 'devnet';
+  console.log("RPC_NETWORK-----------", RPC_NETWORK);
+  console.log("REC111-----------", clusterApiUrl(RPC_NETWORK));
+  console.log("RPC22-----------", RPC_ENDPOINT);
 
   // RPC连接
   const connection = useMemo(() =>
@@ -111,7 +115,7 @@ export const WalletTest: React.FC = () => {
                   <Text fontSize="lg" fontWeight="bold">
                     连接状态
                   </Text>
-                  
+
                   <Alert status={isConnected ? "success" : "info"}>
                     <AlertIcon />
                     {isConnected ? "钱包已连接" : "钱包未连接"}
@@ -123,27 +127,27 @@ export const WalletTest: React.FC = () => {
                         <Text fontWeight="semibold">钱包类型:</Text>
                         <Text>@reown/appkit</Text>
                       </HStack>
-                      
+
                       <HStack justify="space-between">
                         <Text fontWeight="semibold">钱包地址:</Text>
                         <Code fontSize="sm">
                           {formatAddress(address, 8)}
                         </Code>
                       </HStack>
-                      
+
                       <HStack justify="space-between">
                         <Text fontWeight="semibold">完整地址:</Text>
                         <Code fontSize="xs" wordBreak="break-all">
                           {address}
                         </Code>
                       </HStack>
-                      
+
                       <HStack justify="space-between">
                         <Text fontWeight="semibold">账户余额:</Text>
                         <VStack align="end" spacing={1}>
                           <Text>
-                            {loading ? '加载中...' : 
-                             balance !== null ? `${formatSOL(balance)} SOL` : '获取失败'}
+                            {loading ? '加载中...' :
+                              balance !== null ? `${formatSOL(balance)} SOL` : '获取失败'}
                           </Text>
                           <Button size="sm" onClick={handleRefreshBalance} isLoading={loading}>
                             刷新余额
@@ -161,32 +165,32 @@ export const WalletTest: React.FC = () => {
                   <Text fontSize="lg" fontWeight="bold">
                     测试操作
                   </Text>
-                  
+
                   <HStack spacing={4} wrap="wrap">
-                    <Button 
-                      colorScheme="blue" 
+                    <Button
+                      colorScheme="blue"
                       onClick={() => navigate('/create?type=redpacket')}
                       isDisabled={!isConnected}
                     >
                       创建红包
                     </Button>
-                    <Button 
-                      colorScheme="green" 
+                    <Button
+                      colorScheme="green"
                       onClick={() => navigate('/claim')}
                       isDisabled={!isConnected}
                     >
                       领取红包
                     </Button>
-                    <Button 
-                      colorScheme="purple" 
+                    <Button
+                      colorScheme="purple"
                       onClick={() => navigate('/my-redpackets')}
                       isDisabled={!isConnected}
                     >
                       我的红包
                     </Button>
                     {isConnected && (
-                      <Button 
-                        colorScheme="red" 
+                      <Button
+                        colorScheme="red"
                         variant="outline"
                         onClick={() => open()}
                       >
